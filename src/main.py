@@ -108,7 +108,7 @@ def generate_ai_enhanced_diagnosis(data):
                 {"role": "user", "content": prompt}
             ],
             temperature=0.5, # Slightly creative but mostly factual
-            max_tokens=600 # Adjust token limit as needed
+            max_tokens=4000 # Adjust token limit as needed
         )
         print("--- OpenAI response received ---")
 
