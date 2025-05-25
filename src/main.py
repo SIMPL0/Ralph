@@ -4,51 +4,47 @@ import json
 import random
 import re
 import html
+import cohere # Import Cohere library
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI # Import OpenAI library
 
 app = Flask(__name__)
 CORS(app) # Allow requests from the frontend
 
 # --- Configuration from Environment Variables ---
-# Securely load credentials and API keys from environment variables
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+COHERE_API_KEY = os.getenv("COHERE_API_KEY") # Use Cohere API Key
 # -------------------------------------------
 
-# Initialize OpenAI client (only if key is provided)
-openai_client = None
-if OPENAI_API_KEY:
+# Configure Cohere client (only if key is provided)
+cohere_client = None
+if COHERE_API_KEY:
     try:
-        openai_client = OpenAI(api_key=OPENAI_API_KEY)
-        print("OpenAI client initialized successfully.")
+        cohere_client = cohere.Client(COHERE_API_KEY)
+        print("Cohere client configured successfully.")
     except Exception as e:
-        print(f"Error initializing OpenAI client: {e}")
-        openai_client = None # Ensure client is None if initialization fails
+        print(f"Error configuring Cohere client: {e}")
+        cohere_client = None # Ensure client is None if configuration fails
 else:
-    print("Warning: OPENAI_API_KEY environment variable not set. AI analysis will be skipped.")
+    print("Warning: COHERE_API_KEY environment variable not set. AI analysis will be skipped.")
 
 def format_currency(value):
-    """Helper to format numbers as currency (e.g., $1,234.56). Placeholder.
-       Actual currency detection/formatting might need more context.
-    """
+    """Helper to format numbers as currency (e.g., $1,234.56). Placeholder."""
     try:
-        # Basic check if it looks like a number
         num_value = float(re.sub(r"[^0-9.]", "", str(value)))
-        return f"${num_value:,.2f}" # Simple USD formatting
+        return f"${num_value:,.2f}"
     except ValueError:
-        return str(value) # Return original string if not easily convertible
+        return str(value)
 
 def generate_ai_enhanced_diagnosis(data):
-    """Generates an enhanced diagnosis using OpenAI based on conversation data."""
-    if not openai_client:
+    """Generates an enhanced diagnosis using Cohere based on conversation data."""
+    if not cohere_client:
         return "<div class=\"diagnosis-box\"><p><em>AI analysis could not be performed. Configuration missing.</em></p></div>"
 
     user_name = data.get("userName", "User")
@@ -56,11 +52,10 @@ def generate_ai_enhanced_diagnosis(data):
     business_type = data.get("businessType", "real estate business")
     role = data.get("role", "")
     questions_data = data.get("questions", [])
-    # images_data = data.get("images", []) # Image data available if needed for future analysis
 
-    # Prepare context for AI
+    # Prepare context for AI (same as before)
     context = f"User Name: {user_name}\n"
-    if data.get("companyName"): context += f"Company Name: {data['companyName']}\n"
+    if data.get("companyName"): context += f"Company Name: {data["companyName"]}\n"
     if business_name != "their business": context += f"Business Name: {business_name}\n"
     context += f"Business Type: {business_type}\n"
     if role: context += f"Role: {role}\n\n"
@@ -70,7 +65,7 @@ def generate_ai_enhanced_diagnosis(data):
         answer = item.get("answer", "A").replace("\n", " ")
         context += f"- Q: {question}\n  A: {answer}\n"
 
-    # Construct the prompt for OpenAI
+    # Construct the prompt for Cohere (similar structure, Cohere is good with instructions)
     prompt = f"""
     Analyze the following real estate business information provided by {user_name} regarding {business_name}.
     The user's role is '{role}' within a '{business_type}' context.
@@ -99,37 +94,39 @@ def generate_ai_enhanced_diagnosis(data):
     """
 
     try:
-        print("\n--- Sending request to OpenAI ---")
-        # print(f"Prompt: {prompt[:500]}...") # Log prompt start for debugging
-        completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo", # Or use "gpt-4" if available/preferred
-            messages=[
-                {"role": "system", "content": "You are an expert business analyst specializing in the real estate sector. Generate concise, actionable HTML reports based on user inputs."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.5, # Slightly creative but mostly factual
-            max_tokens=600 # Adjust token limit as needed
+        print("\n--- Sending request to Cohere ---")
+        # Generate content using Cohere's generate endpoint
+        response = cohere_client.generate(
+            model='command', # Or other suitable Cohere model like 'command-light'
+            prompt=prompt,
+            max_tokens=1024, # Adjust as needed, Cohere might have different token counts
+            temperature=0.6,
+            k=0,
+            p=0.75,
+            stop_sequences=[],
+            return_likelihoods='NONE'
         )
-        print("--- OpenAI response received ---")
+        print("--- Cohere response received ---")
 
-        ai_diagnosis_html = completion.choices[0].message.content
+        # Extract the generated text
+        ai_diagnosis_html = response.generations[0].text
 
-        # Basic validation/cleanup
+        # Basic validation/cleanup (same as before)
         if not ai_diagnosis_html.strip().startswith('<div class="diagnosis-box">'):
              ai_diagnosis_html = f'<div class="diagnosis-box">{ai_diagnosis_html}</div>' # Ensure it's wrapped
 
-        # Add a small disclaimer
+        # Add disclaimer (same as before)
         ai_diagnosis_html += "<p style='font-size: 0.8em; color: #6c757d; margin-top: 15px;'><em>Disclaimer: This AI-generated analysis is based on the provided information and aims to highlight potential areas. A comprehensive business strategy requires deeper consultation.</em></p>"
 
         return ai_diagnosis_html
 
     except Exception as e:
-        print(f"Error calling OpenAI API: {e}")
-        # Fallback to a simpler message if AI fails
-        return f"<div class=\"diagnosis-box\"><p><strong>Analysis Report for {html.escape(user_name)}</strong></p><p>We received your information about {html.escape(business_name)}. An error occurred during the AI-powered analysis generation. However, your data has been recorded.</p><p><em>Common areas real estate professionals focus on include lead generation, client follow-up, and time management. Exploring tools and strategies in these areas can often yield significant improvements.</em></p><p><em>Error details: {html.escape(str(e))}</em></p></div>"
+        print(f"Error calling Cohere API: {e}")
+        # Fallback message if Cohere fails
+        return f"<div class=\"diagnosis-box\"><p><strong>Analysis Report for {html.escape(user_name)}</strong></p><p>We received your information about {html.escape(business_name)}. An error occurred during the AI-powered analysis generation using Cohere.</p><p><em>Common areas real estate professionals focus on include lead generation, client follow-up, and time management. Exploring tools and strategies in these areas can often yield significant improvements.</em></p><p><em>Error details: {html.escape(str(e))}</em></p></div>"
 
 def send_email_notification(subject, html_body):
-    """Sends an email using configured SMTP settings."""
+    """Sends an email using configured SMTP settings (No changes needed here)."""
     if not all([EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, SMTP_SERVER]):
         print("Email configuration incomplete. Skipping email notification.")
         return False
@@ -142,11 +139,10 @@ def send_email_notification(subject, html_body):
 
     try:
         print(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
-        # Use starttls for port 587
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.ehlo() # Extended Hello
-        server.starttls() # Start TLS encryption
-        server.ehlo() # Re-identify after TLS
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
         print("Logging into email account...")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         print("Sending email...")
@@ -163,13 +159,12 @@ def send_email_notification(subject, html_body):
 
 @app.route("/analyze", methods=["POST"])
 def analyze_data():
-    """Receives data, generates AI diagnosis, sends email, returns diagnosis to frontend."""
+    """Receives data, generates AI diagnosis (now using Cohere), sends email, returns diagnosis."""
     try:
         data = request.json
         if not data:
             return jsonify({"error": "No data received"}), 400
 
-        # Log received data (excluding potentially large image data)
         log_data = {k: v for k, v in data.items() if k != 'images'}
         print("Received data for analysis:", json.dumps(log_data, indent=2))
 
@@ -178,14 +173,14 @@ def analyze_data():
         business_name = data.get("businessName", "their business")
         business_type = data.get("businessType", "N/A")
         role = data.get("role", "N/A")
-        chat_history = data.get("chatHistory", []) # Full chat history
-        questions_answers = data.get("questions", []) # Just Q&A pairs
+        chat_history = data.get("chatHistory", [])
+        questions_answers = data.get("questions", [])
 
-        # --- Generate AI Diagnosis --- 
+        # --- Generate AI Diagnosis (using Cohere function) --- 
         ai_diagnosis_html = generate_ai_enhanced_diagnosis(data)
-        # -----------------------------
+        # -----------------------------------------------------
 
-        # --- Prepare Email Content --- 
+        # --- Prepare Email Content (No changes needed here) --- 
         subject_prefix = "Ralph Analysis Completed"
         subject_identifier = f"{user_name}"
         if company_name:
@@ -196,7 +191,6 @@ def analyze_data():
              subject_identifier += f" ({business_type})"
         email_subject = f"{subject_prefix}: {subject_identifier}"
 
-        # Build HTML email body
         email_body = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -214,7 +208,6 @@ def analyze_data():
   .bot-message {{ background-color: #f0f0f0; border-left: 4px solid #555; }}
   .user-message {{ background-color: #e6f7ff; border-left: 4px solid #100f0f; }}
   .message-sender {{ font-weight: bold; margin-bottom: 5px; display: block; color: #100f0f; }}
-  /* Hide buttons and other interactive elements in email */
   .message-content button, .business-type-selector {{ display: none !important; }}
   .diagnosis-box {{ margin-top: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; }}
   .diagnosis-box h3 {{ color: #100f0f; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; }}
@@ -244,62 +237,40 @@ def analyze_data():
             for msg in chat_history:
                 sender = msg.get("sender")
                 content = msg.get("content", "(empty)")
-                # Sanitize HTML content from bot messages for email
-                # Basic approach: remove script tags, keep structure
-                # A more robust sanitizer might be needed for complex HTML
                 safe_content = re.sub(r'<script.*?</script>', '', content, flags=re.IGNORECASE | re.DOTALL)
-                # Remove diagnosis box from chat history in email to avoid duplication
-                safe_content = re.sub(r'<div class=\"diagnosis-box.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
-                # Remove button selectors
-                safe_content = re.sub(r'<div class=\"business-type-selector.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
+                safe_content = re.sub(r'<div class="diagnosis-box.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
+                safe_content = re.sub(r'<div class="business-type-selector.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
 
                 if sender == "bot":
                     email_body += f"<div class='chat-message bot-message'><span class='message-sender'>Ralph (Bot):</span><div class='message-content'>{safe_content}</div></div>"
                 elif sender == "user":
-                    # User content is plain text, just escape it
                     email_body += f"<div class='chat-message user-message'><span class='message-sender'>{html.escape(user_name)}:</span><div class='message-content'>{html.escape(content)}</div></div>"
         else:
             email_body += "<p><em>No chat history was recorded.</em></p>"
         email_body += """  </div>
 
-  <h2>AI-Generated Analysis:</h2>
+  <h2>AI-Generated Analysis (Cohere):</h2>
 """
-        # Append the AI diagnosis HTML directly
         email_body += ai_diagnosis_html
         email_body += """</div>
 </body>
 </html>"""
-        # -----------------------------
+        # -----------------------------------------------------
 
         # --- Send Email Notification (Silently) ---
         send_email_notification(email_subject, email_body)
         # -----------------------------------------
 
         # --- Return AI Diagnosis to Frontend --- 
-        # The frontend expects a JSON with 'diagnosis_html'
         return jsonify({"diagnosis_html": ai_diagnosis_html})
         # ---------------------------------------
 
     except Exception as e:
         print(f"Error in /analyze endpoint: {e}")
         # Provide a generic error message to the frontend
-        error_html = f"<div class=\"diagnosis-box\"><p>An unexpected error occurred while processing your request. Please try again later. Details: {html.escape(str(e))}</p></div>"
-        # Also attempt to send an error email
-        try:
-            error_subject = f"ERROR in Ralph Analysis: {user_name}"
-            error_body = f"<h1>Error occurred during analysis</h1><p>User: {html.escape(user_name)}</p><p>Error: {html.escape(str(e))}</p><hr><p>Received Data:</p><pre>{html.escape(json.dumps(log_data, indent=2))}</pre>"
-            send_email_notification(error_subject, error_body)
-        except Exception as email_err:
-            print(f"Failed to send error email: {email_err}")
-            
-        return jsonify({"diagnosis_html": error_html}), 500
+        return jsonify({"diagnosis_html": f"<div class=\"diagnosis-box\"><p>An unexpected error occurred processing your request. Please try again later. Error: {html.escape(str(e))}</p></div>"}), 500
 
 if __name__ == "__main__":
-    # Use Gunicorn or another WSGI server in production
-    # For local testing:
-    # app.run(debug=True, host='0.0.0.0', port=5000)
-    # For Render, Gunicorn command will be used (e.g., gunicorn --bind 0.0.0.0:$PORT src.main:app)
-    # The port is usually set by Render via the $PORT environment variable.
-    port = int(os.environ.get("PORT", 5000)) 
-    app.run(host='0.0.0.0', port=port)
+    # This part is mainly for local testing, Render uses the gunicorn command
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 

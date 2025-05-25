@@ -49,7 +49,36 @@
             max-width: 90%;
             max-height: 90%;
             object-fit: contain;
+            /* Tentativa de esconder controles via CSS */
+            pointer-events: none; /* Desabilita cliques/taps diretos no vídeo */
         }
+
+        /* Esconder controles de vídeo padrão (especialmente para WebKit/Chrome) */
+        #intro-video::-webkit-media-controls-panel,
+        #intro-video::-webkit-media-controls-play-button,
+        #intro-video::-webkit-media-controls-volume-slider,
+        #intro-video::-webkit-media-controls-fullscreen-button,
+        #intro-video::-webkit-media-controls-timeline,
+        #intro-video::-webkit-media-controls-current-time-display,
+        #intro-video::-webkit-media-controls-time-remaining-display,
+        #intro-video::-webkit-media-controls {
+            display: none !important;
+            opacity: 0 !important;
+            -webkit-appearance: none;
+        }
+
+        /* Para Firefox (pode não funcionar perfeitamente para todos os controles) */
+        #intro-video::-moz-media-controls {
+            display: none !important;
+            opacity: 0 !important;
+        }
+
+        /* Fallback genérico (pode não ser suportado) */
+        #intro-video::media-controls {
+             display: none !important;
+             opacity: 0 !important;
+        }
+
 
         /* === CHAT CONTAINER (Inicialmente oculto) === */
         .chat-container {
@@ -169,49 +198,56 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Estilos para a caixa de diagnóstico (mantidos) */
+        /* === ESTILOS MELHORADOS PARA DIAGNÓSTICO IA === */
         .message.bot .diagnosis-box {
-             margin-top: 10px;
-             line-height: 1.5;
-             border: 1px solid #eee;
-             padding: 15px;
+             margin-top: 15px; /* Mais espaço acima */
+             line-height: 1.7; /* Melhor espaçamento entre linhas */
+             border: 1px solid #e0e0e0;
+             padding: 20px; /* Mais padding interno */
              border-radius: 10px;
              background-color: #fdfdfd;
+             font-size: 16px; /* Tamanho base da fonte aumentado */
+             color: #333; /* Cor base do texto */
         }
         .message.bot .diagnosis-box h3 {
-            font-size: 1.2em;
+            font-size: 1.4em; /* Título principal maior */
             color: #100f0f;
-            margin-bottom: 10px;
+            margin-bottom: 15px; /* Mais espaço abaixo */
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ccc;
         }
         .message.bot .diagnosis-box h4 {
-             margin-top: 15px;
-             margin-bottom: 8px;
-             font-size: 1.1em;
-             color: #333;
+             margin-top: 20px; /* Espaço antes do subtítulo */
+             margin-bottom: 12px; /* Espaço depois do subtítulo */
+             font-size: 1.2em; /* Subtítulo maior */
+             color: #100f0f; /* Cor mais escura para subtítulos */
         }
          .message.bot .diagnosis-box ul {
             list-style: none;
-            padding-left: 5px;
-            margin-bottom: 10px;
+            padding-left: 10px; /* Menos indentação */
+            margin-bottom: 15px; /* Espaço após a lista */
         }
         .message.bot .diagnosis-box li {
-            margin-bottom: 10px;
-            padding-left: 20px;
+            margin-bottom: 12px; /* Mais espaço entre itens */
+            padding-left: 25px; /* Espaço para o bullet */
             position: relative;
-            color: #555;
+            color: #444; /* Cor do texto do item */
+            font-size: 1.05em; /* Leve aumento no texto do item */
         }
         /* Bullet customizado */
         .message.bot .diagnosis-box li::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background-color: #100f0f;
-            border-radius: 50%;
+            content: '\2022'; /* Bullet padrão */
+            color: #100f0f;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1.2em; /* Alinha o bullet */
             position: absolute;
-            left: 5px;
-            top: 8px;
+            left: 15px;
+            top: 1px; /* Ajuste fino vertical */
+            font-size: 1.1em;
         }
-        /* Estilos específicos para pontos positivos e negativos (serão aplicados via span no backend) */
+        /* Estilos específicos para pontos positivos e negativos (mantidos) */
         .diagnosis-positive {
             color: #28a745; /* Verde */
             font-weight: bold;
@@ -221,16 +257,17 @@
             font-weight: bold;
         }
          .message.bot .diagnosis-box p {
-            margin-bottom: 12px;
-            font-size: 0.98em;
-            color: #444;
+            margin-bottom: 15px; /* Mais espaço entre parágrafos */
+            font-size: 1.05em; /* Leve aumento no texto do parágrafo */
+            color: #333;
         }
          .message.bot .diagnosis-box em {
             font-size: 0.9em;
             color: #6c757d;
             display: block;
-            margin-top: 5px;
+            margin-top: 10px; /* Mais espaço antes do disclaimer */
         }
+        /* === FIM DOS ESTILOS MELHORADOS PARA DIAGNÓSTICO === */
 
         /* Mensagem do Usuário (cor escura) */
         .message.user .message-content {
@@ -474,7 +511,8 @@
 
     <!-- Intro Video Container -->
     <div id="intro-video-container">
-        <video id="intro-video" src="intro_video.mp4" autoplay muted playsinline></video>
+        <!-- Adicionado controls="false" e CSS específico para esconder controles -->
+        <video id="intro-video" src="intro_video.mp4" autoplay muted playsinline controls="false"></video>
     </div>
 
     <!-- Chat Container (initially hidden) -->
@@ -514,74 +552,85 @@
             </div>
 
             <div class="input-group">
-                <textarea
-                    class="input-field"
-                    id="messageInput"
-                    placeholder="Type your answer here..."
-                    rows="1"
-                    disabled /* Desabilitado até o chat iniciar */
-                ></textarea>
-                <button class="send-btn" id="sendBtn" type="button" disabled> <!-- Desabilitado até o chat iniciar -->
-                    ➤
-                </button>
+                <textarea class="input-field" id="userInput" placeholder="Type your answer here..." rows="1" disabled></textarea>
+                <button class="send-btn" id="sendBtn" disabled>➤</button>
             </div>
-
-            <button class="finish-btn" id="finishBtn" type="button" disabled>
-                🎯 Complete Analysis & Get Diagnosis
-            </button>
+            <button class="finish-btn" id="finishBtn" disabled>Complete Analysis & Get Diagnosis</button>
             <div class="status-message" id="statusMessage"></div>
         </div>
     </div>
 
     <script>
-        // === ELEMENTOS DOM ===
-        const introVideoContainer = document.getElementById('intro-video-container');
-        const introVideo = document.getElementById('intro-video');
-        const chatContainer = document.getElementById('chatContainer');
+        // --- CONFIGURAÇÃO --- 
+        // IMPORTANTE: Substitua pela URL real do seu backend Render!
+        const BACKEND_URL = 'COLE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
+        const MAX_QUESTIONS = 10;
+        const MAX_IMAGES = 5;
+
+        // --- ELEMENTOS DOM --- 
         const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
+        const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const finishBtn = document.getElementById('finishBtn');
         const typingIndicator = document.getElementById('typingIndicator');
         const progressFill = document.getElementById('progressFill');
         const imageUpload = document.getElementById('imageUpload');
+        const uploadedImagesContainer = document.getElementById('uploadedImages');
         const imageCountSpan = document.getElementById('imageCount');
-        const uploadedImagesDiv = document.getElementById('uploadedImages');
         const limitWarning = document.getElementById('limitWarning');
         const statusMessage = document.getElementById('statusMessage');
-        const fileUploadBtn = document.querySelector('.file-upload-btn'); // Usar querySelector para o label
+        const introVideoContainer = document.getElementById('intro-video-container');
+        const introVideo = document.getElementById('intro-video');
+        const chatContainer = document.getElementById('chatContainer');
 
-        // === CONFIGURAÇÃO ===
-        // Use uma URL relativa ou absoluta dependendo de onde o backend está rodando
-        // Se o HTML e o backend estiverem no mesmo servidor/domínio:
-        const BACKEND_URL = '/analyze'; 
-        // Se estiverem separados (ex: frontend no GitHub Pages, backend no Render):
-        // const BACKEND_URL = 'COLOQUE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
-        // ====================
-
-        // Estado da Aplicação
-        let conversationData = {
-            userName: '', companyName: '', businessName: '', businessType: '', role: '',
-            questions: [], images: [], questionCount: 0, maxQuestions: 15, maxImages: 5,
-            analysisComplete: false, currentStep: 'intro', chatHistory: [], // Inicia no 'intro'
-            uploadedFilesData: [] // Para armazenar nome e base64 das imagens
+        // --- ESTADO DO CHAT --- 
+        let currentQuestionIndex = 0;
+        let chatHistory = [];
+        let uploadedImages = [];
+        let userAnswers = {}; // Armazena Q&A para envio final
+        let userInfo = {
+            userName: '',
+            businessType: '',
+            companyName: '',
+            businessName: '',
+            role: ''
         };
+        let isWaitingForBot = false;
+        let isFinished = false;
 
-        // Listas de Perguntas (mantidas)
-        const individualQuestions = [
-            "How long have you been working as a realtor?", "What's your primary market area (city/region)?", "How many transactions do you typically close per month?", "What's your main lead generation method currently?", "Do you work with a team or operate solo?", "What's your biggest challenge in managing client relationships?", "How do you currently manage your listings and showings?", "What marketing channels do you use most (social media, websites, etc.)?", "How much time do you spend on administrative tasks daily?", "What's your follow-up process with potential clients?", "Do you use any CRM or real estate management software?", "What's your biggest monthly expense category?", "How do you handle client communication and updates?", "What aspects of your business feel most time-consuming?", "What would help you close more deals faster?"
-        ];
-        const companyOwnerQuestions = [
-            "How many agents work with you?", "How long has your real estate company been operating?", "What's your company's primary market focus (residential, commercial, luxury)?", "How do you currently generate leads for your agents?", "What's your agent commission structure?", "How do you handle marketing for listings company-wide?", "What's your biggest operational challenge right now?", "How do you manage agent training and onboarding?", "What technology stack does your company use?", "How do you track and measure agent performance?", "What are your main overhead costs (office, marketing, staff)?", "How do you handle client referrals and lead distribution?", "What's your process for managing multiple listings?", "How do you maintain brand consistency across agents?", "What would most improve your company's profitability?"
-        ];
-        const companyEmployeeQuestions = [
-            "What's your role in the company?", "How long have you been with your current company?", "How many transactions do you handle monthly?", "What support does your company provide for lead generation?", "How satisfied are you with your current commission split?", "What tools and systems does your company provide?", "What's your biggest challenge in your day-to-day work?", "How does your company handle internal communication?", "What training opportunities are available to you?", "How are leads typically assigned to you?", "What marketing support do you receive?", "How is your performance evaluated?", "What administrative tasks take up most of your time?", "What could the company do better to support its employees?", "What technology would make your job easier?"
+        // --- PERGUNTAS --- 
+        const questions = [
+            // Informações Iniciais
+            { id: 'name', text: "Hi! I'm Ralph, your AI business analyzer. To start, what's your name?", type: 'text', key: 'userName' },
+            { id: 'business_type', text: "Nice to meet you, {userName}! What type of real estate business are you primarily involved in?", type: 'choice', options: [
+                { value: 'real_estate_agency', label: '🏢 Real Estate Agency' },
+                { value: 'property_management', label: '🔑 Property Management' },
+                { value: 'real_estate_development', label: '🏗️ Real Estate Development' },
+                { value: 'real_estate_investment', label: '💰 Real Estate Investment (Flipping, REITs, etc.)' },
+                { value: 'mortgage_brokerage', label: '🏦 Mortgage Brokerage' },
+                { value: 'other', label: '✍️ Other (Please specify)' }
+            ], key: 'businessType' },
+            { id: 'company_name', text: "Got it. What's the name of your company (if applicable)?", type: 'text', optional: true, key: 'companyName' },
+            { id: 'business_name_q', text: "And what name does your business operate under (if different from the company name or if you're independent)?", type: 'text', optional: true, key: 'businessName' },
+            { id: 'role', text: "What is your current role within the business?", type: 'text', key: 'role' },
+
+            // Perguntas de Diagnóstico (Máximo de MAX_QUESTIONS - perguntas iniciais)
+            { id: 'q1', text: "What are the biggest challenges you face daily in your real estate activities?", type: 'text' },
+            { id: 'q2', text: "How do you currently manage client relationships and follow-ups? (e.g., CRM, spreadsheet, memory)", type: 'text' },
+            { id: 'q3', text: "Describe your process for generating new leads. What works best and what doesn't?", type: 'text' },
+            { id: 'q4', text: "Approximately how much time per week do you spend on administrative tasks (paperwork, scheduling, data entry)?", type: 'text' },
+            { id: 'q5', text: "What tools or software are essential to your business right now? Are there any you wish you had?", type: 'text' },
+            { id: 'q6', text: "How do you handle property showings and virtual tours? What challenges exist there?", type: 'text' },
+            { id: 'q7', text: "What are your main marketing strategies? How do you measure their success?", type: 'text' },
+            { id: 'q8', text: "Are there any specific areas where you feel costs could be reduced or efficiency improved?", type: 'text' },
+            { id: 'q9', text: "How do you stay updated with market trends and property valuations?", type: 'text' },
+            { id: 'q10', text: "What are your primary business goals for the next 6-12 months?", type: 'text' }
         ];
 
-        // === FUNÇÕES AUXILIARES ===
+        // --- FUNÇÕES DO CHAT --- 
 
-        // Adiciona mensagem ao chat
-        function addMessage(sender, content, isHTML = false) {
+        // Adiciona mensagem à UI e ao histórico
+        function addMessage(sender, content, isHtml = false) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', sender);
 
@@ -591,468 +640,373 @@
 
             const contentDiv = document.createElement('div');
             contentDiv.classList.add('message-content');
-            if (isHTML) {
-                contentDiv.innerHTML = content; // Usa innerHTML para renderizar HTML
+            if (isHtml) {
+                contentDiv.innerHTML = content; // Renderiza HTML diretamente
             } else {
                 contentDiv.textContent = content;
             }
 
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(contentDiv);
+            if (sender === 'bot') {
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(contentDiv);
+            } else {
+                messageDiv.appendChild(contentDiv);
+                // Não adiciona avatar para user para economizar espaço
+            }
+
             chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
 
-            // Scroll para a última mensagem
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Adiciona ao histórico
-            conversationData.chatHistory.push({ sender, content });
+            // Adiciona ao histórico (simplificado para envio)
+            chatHistory.push({ sender, content });
         }
 
-        // Mostra/oculta indicador de digitação
-        function showTypingIndicator(show) {
-            typingIndicator.style.display = show ? 'flex' : 'none';
-            if (show) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+        // Mostra indicador de digitação
+        function showTyping() {
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Esconde indicador de digitação
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
         }
 
         // Atualiza barra de progresso
         function updateProgress() {
-            const progress = Math.min(100, (conversationData.questionCount / conversationData.maxQuestions) * 100);
+            const totalSteps = questions.length;
+            const progress = (currentQuestionIndex / totalSteps) * 100;
             progressFill.style.width = `${progress}%`;
         }
 
-        // Habilita/desabilita input e botões
-        function setInputEnabled(enabled) {
-            messageInput.disabled = !enabled;
-            sendBtn.disabled = !enabled;
-            fileUploadBtn.style.pointerEvents = enabled ? 'auto' : 'none';
-            fileUploadBtn.style.opacity = enabled ? '1' : '0.5';
-            if (!enabled) {
-                messageInput.placeholder = 'Waiting for response...';
+        // Processa a resposta do usuário
+        function handleUserInput() {
+            if (isWaitingForBot || isFinished) return;
+
+            const answer = userInput.value.trim();
+            if (!answer && questions[currentQuestionIndex].type === 'text' && !questions[currentQuestionIndex].optional) {
+                // Poderia adicionar validação visual aqui se necessário
+                return;
+            }
+
+            addMessage('user', answer);
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            // Armazena a resposta
+            const currentQuestion = questions[currentQuestionIndex];
+            if (currentQuestion.key) {
+                userInfo[currentQuestion.key] = answer;
+            }
+            // Armazena Q&A para o prompt da IA
+            userAnswers[currentQuestion.id] = { question: currentQuestion.text.replace('{userName}', userInfo.userName), answer: answer };
+
+            currentQuestionIndex++;
+            updateProgress();
+
+            if (currentQuestionIndex < questions.length) {
+                askNextQuestion();
             } else {
-                // Define o placeholder adequado para a etapa atual
-                switch (conversationData.currentStep) {
-                    case 'ask_name': messageInput.placeholder = 'Your name...'; break;
-                    case 'ask_business_type': messageInput.placeholder = 'Choose an option above...'; break; // Placeholder enquanto botões são mostrados
-                    case 'ask_company_name': messageInput.placeholder = 'Your company name...'; break;
-                    case 'ask_business_name': messageInput.placeholder = 'Your business name...'; break;
-                    case 'ask_role': messageInput.placeholder = 'Your role...'; break;
-                    case 'ask_question': messageInput.placeholder = 'Type your answer here...'; break;
-                    default: messageInput.placeholder = 'Type your answer here...';
-                }
+                finishConversation();
             }
         }
 
-        // === LÓGICA DO CHAT ===
-
-        // Inicia a conversa
-        function startConversation() {
-            conversationData.currentStep = 'ask_name';
-            addMessage('bot', "Hello! 👋 I'm Ralph, your real estate business analyst. I'll conduct a comprehensive analysis of your business to identify optimization opportunities and cost savings.\n\nTo start, <strong>what's your name?</strong>", true);
-            setInputEnabled(true);
-            messageInput.focus();
-        }
-
-        // Próxima etapa da conversa
-        function nextStep(userInput = null) {
-            setInputEnabled(false);
-            if (userInput) {
-                addMessage('user', userInput);
-                conversationData.questions.push({ question: getCurrentQuestionPrompt(), answer: userInput });
-            }
-
-            showTypingIndicator(true);
-
-            // Simula um pequeno delay da IA pensando
-            setTimeout(() => {
-                showTypingIndicator(false);
-                handleCurrentStep(userInput);
-                // Habilita input apenas se a análise não estiver completa
-                if (!conversationData.analysisComplete) {
-                    setInputEnabled(true);
-                    messageInput.focus();
-                }
-            }, 800 + Math.random() * 500); // Delay aleatório entre 0.8s e 1.3s
-        }
-
-        // Obtém o texto da pergunta atual (para salvar no histórico)
-        function getCurrentQuestionPrompt() {
-            const lastBotMessage = conversationData.chatHistory.filter(m => m.sender === 'bot').pop();
-            // Simplificação: Pega a última mensagem do bot como prompt. Pode precisar de ajuste.
-            // Remove tags HTML para o prompt salvo
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = lastBotMessage?.content || 'Unknown Question';
-            return tempDiv.textContent || tempDiv.innerText || 'Unknown Question';
-        }
-
-        // Gerencia a lógica de cada etapa
-        function handleCurrentStep(userInput) {
-            switch (conversationData.currentStep) {
-                case 'ask_name':
-                    if (userInput && userInput.trim()) {
-                        conversationData.userName = userInput.trim();
-                        conversationData.currentStep = 'ask_business_type';
-                        askBusinessType();
-                    } else {
-                        addMessage('bot', "Please tell me your name so we can get started.");
-                    }
-                    break;
-
-                case 'ask_business_type':
-                    // A seleção é feita por botão, não por input de texto
-                    // A função handleBusinessTypeSelection cuida disso
-                    break;
-
-                case 'ask_company_name':
-                    if (userInput && userInput.trim()) {
-                        conversationData.companyName = userInput.trim();
-                        conversationData.currentStep = 'ask_question';
-                        askNextQuestion();
-                    } else {
-                        addMessage('bot', "Please provide your company name.");
-                    }
-                    break;
-
-                case 'ask_business_name':
-                     if (userInput && userInput.trim()) {
-                        conversationData.businessName = userInput.trim();
-                        conversationData.currentStep = 'ask_question';
-                        askNextQuestion();
-                    } else {
-                        addMessage('bot', "Please provide your business name.");
-                    }
-                    break;
-
-                case 'ask_role':
-                    if (userInput && userInput.trim()) {
-                        conversationData.role = userInput.trim();
-                        conversationData.currentStep = 'ask_question';
-                        askNextQuestion();
-                    } else {
-                        addMessage('bot', "Please tell me your role in the company.");
-                    }
-                    break;
-
-                case 'ask_question':
-                    if (userInput && userInput.trim()) {
-                        conversationData.questionCount++;
-                        updateProgress();
-                        if (conversationData.questionCount >= conversationData.maxQuestions) {
-                            finishAnalysis();
-                        } else {
-                            askNextQuestion();
-                        }
-                    } else {
-                        // Repete a última pergunta se a resposta for vazia
-                        const lastQuestion = conversationData.questions[conversationData.questions.length - 1]?.question || "Could you please provide an answer?";
-                        addMessage('bot', `Please provide an answer for: "${lastQuestion}"`);
-                    }
-                    break;
-
-                case 'analysis_complete':
-                    // Nenhuma ação necessária aqui, o botão Finalizar cuida disso
-                    break;
-            }
-        }
-
-        // Pergunta o tipo de negócio (com botões)
-        function askBusinessType() {
-            const messageContent = `Nice to meet you, ${conversationData.userName}! 
-            <br><br>To tailor the analysis, please select your situation:
-            <div class="business-type-selector">
-                <button class="business-type-btn" onclick="handleBusinessTypeSelection('individual')">👤 I'm an Individual Realtor/Broker</button>
-                <button class="business-type-btn" onclick="handleBusinessTypeSelection('company_owner')">🏢 I'm the Owner of a Real Estate Company</button>
-                <button class="business-type-btn" onclick="handleBusinessTypeSelection('company_employee')">🧑‍💼 I'm an Employee at a Real Estate Company</button>
-            </div>`;
-            addMessage('bot', messageContent, true);
-            setInputEnabled(false); // Desabilita input de texto, espera clique no botão
-            messageInput.placeholder = 'Choose an option above...';
-        }
-
-        // Lida com a seleção do tipo de negócio
-        function handleBusinessTypeSelection(type) {
-            // Remove os botões da mensagem anterior para limpar a interface
-            const lastBotMessageContent = chatMessages.querySelector('.message.bot:last-child .message-content');
-            if (lastBotMessageContent) {
-                const selector = lastBotMessageContent.querySelector('.business-type-selector');
-                if (selector) selector.remove();
-            }
-
-            conversationData.businessType = type;
-            let userFriendlyType = '';
-
-            switch (type) {
-                case 'individual':
-                    userFriendlyType = 'Individual Realtor/Broker';
-                    addMessage('user', `Selected: ${userFriendlyType}`);
-                    conversationData.currentStep = 'ask_business_name'; // Pergunta nome do negócio individual
-                    addMessage('bot', "Great! What's the name of your real estate business or practice?");
-                    break;
-                case 'company_owner':
-                    userFriendlyType = 'Owner of a Real Estate Company';
-                    addMessage('user', `Selected: ${userFriendlyType}`);
-                    conversationData.currentStep = 'ask_company_name';
-                    addMessage('bot', "Understood. What is the name of your company?");
-                    break;
-                case 'company_employee':
-                    userFriendlyType = 'Employee at a Real Estate Company';
-                    addMessage('user', `Selected: ${userFriendlyType}`);
-                    conversationData.currentStep = 'ask_company_name'; // Primeiro pergunta nome da empresa
-                    addMessage('bot', "Got it. What is the name of the company you work for?");
-                    // Após obter nome da empresa, perguntará o cargo
-                    break;
-            }
-
-            setInputEnabled(true);
-            messageInput.focus();
-        }
-
-        // Pergunta a próxima questão baseada no tipo de negócio
+        // Faz a próxima pergunta
         function askNextQuestion() {
-            let questionList;
-            if (conversationData.businessType === 'individual') {
-                questionList = individualQuestions;
-            } else if (conversationData.businessType === 'company_owner') {
-                questionList = companyOwnerQuestions;
-            } else { // company_employee
-                // Se ainda não perguntou o cargo, pergunta agora
-                if (!conversationData.role && conversationData.companyName) {
-                    conversationData.currentStep = 'ask_role';
-                    addMessage('bot', "Thanks! And what is your specific role within the company?");
-                    return; // Sai para esperar a resposta do cargo
+            if (currentQuestionIndex >= questions.length || isFinished) {
+                finishConversation();
+                return;
+            }
+
+            isWaitingForBot = true;
+            showTyping();
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            removeChoiceButtons(); // Remove botões de escolha anteriores
+
+            const question = questions[currentQuestionIndex];
+            let questionText = question.text.replace('{userName}', userInfo.userName || 'there');
+
+            setTimeout(() => {
+                hideTyping();
+                addMessage('bot', questionText, question.type !== 'text'); // Renderiza HTML se não for texto puro
+
+                if (question.type === 'choice') {
+                    createChoiceButtons(question.options);
+                    userInput.style.display = 'none'; // Esconde input de texto para escolhas
+                    sendBtn.style.display = 'none';
+                } else {
+                    userInput.style.display = 'block';
+                    sendBtn.style.display = 'flex';
+                    userInput.disabled = false;
+                    sendBtn.disabled = false;
+                    userInput.focus();
                 }
-                questionList = companyEmployeeQuestions;
-            }
+                isWaitingForBot = false;
+                checkLimits(); // Verifica limites após fazer a pergunta
+            }, 1000 + Math.random() * 500); // Simula tempo de digitação
+        }
 
-            if (conversationData.questionCount < conversationData.maxQuestions && conversationData.questionCount < questionList.length) {
-                const nextQuestion = questionList[conversationData.questionCount];
-                addMessage('bot', `(${conversationData.questionCount + 1}/${conversationData.maxQuestions}) ${nextQuestion}`);
-                conversationData.currentStep = 'ask_question'; // Garante que a próxima resposta seja tratada como resposta de pergunta
+        // Cria botões de múltipla escolha
+        function createChoiceButtons(options) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.classList.add('business-type-selector'); // Reusa a classe para estilização
+            buttonContainer.id = 'choiceButtonContainer'; // ID para remoção fácil
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('business-type-btn'); // Reusa a classe
+                button.textContent = option.label;
+                button.onclick = () => handleChoiceSelection(option.value);
+                buttonContainer.appendChild(button);
+            });
+
+            // Adiciona container de botões abaixo da última mensagem do bot
+            const lastBotMessage = chatMessages.querySelector('.message.bot:last-child .message-content');
+            if (lastBotMessage) {
+                lastBotMessage.appendChild(buttonContainer);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Remove botões de escolha anteriores
+        function removeChoiceButtons() {
+            const existingContainer = document.getElementById('choiceButtonContainer');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
+        }
+
+        // Processa a seleção de um botão de escolha
+        function handleChoiceSelection(value) {
+            if (isWaitingForBot || isFinished) return;
+
+            const selectedOption = questions[currentQuestionIndex].options.find(opt => opt.value === value);
+            addMessage('user', selectedOption.label); // Mostra a label selecionada como resposta do user
+            removeChoiceButtons();
+
+            // Armazena a resposta
+            const currentQuestion = questions[currentQuestionIndex];
+            if (currentQuestion.key) {
+                userInfo[currentQuestion.key] = value; // Armazena o valor interno
+            }
+             // Armazena Q&A para o prompt da IA
+            userAnswers[currentQuestion.id] = { question: currentQuestion.text.replace('{userName}', userInfo.userName), answer: selectedOption.label };
+
+            currentQuestionIndex++;
+            updateProgress();
+
+            if (currentQuestionIndex < questions.length) {
+                askNextQuestion();
             } else {
-                finishAnalysis();
+                finishConversation();
             }
         }
 
-        // Finaliza a fase de perguntas
-        function finishAnalysis() {
-            conversationData.analysisComplete = true;
-            setInputEnabled(false);
-            limitWarning.style.display = 'none'; // Esconde aviso de limite se houver
-            addMessage('bot', "Thanks for all the information! We've completed the question phase. Click the button below to generate your personalized business diagnosis.");
-            finishBtn.style.display = 'block';
-            finishBtn.disabled = false;
+        // Finaliza a conversa e habilita o botão de diagnóstico
+        function finishConversation() {
+            isFinished = true;
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            imageUpload.disabled = true; // Desabilita upload de imagem
+            document.querySelector('.file-upload-btn').style.cursor = 'not-allowed';
+            document.querySelector('.file-upload-btn').style.opacity = '0.7';
+
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                addMessage('bot', "Thanks for sharing! You've answered all the questions. Click the button below to get your personalized AI analysis.");
+                finishBtn.style.display = 'block';
+                finishBtn.disabled = false;
+                limitWarning.style.display = 'none'; // Esconde aviso de limite
+            }, 1000);
         }
 
-        // Envia dados para o backend e mostra o resultado
-        async function getDiagnosis() {
-            finishBtn.disabled = true;
-            finishBtn.textContent = '🧠 Analyzing...';
-            statusMessage.textContent = 'Sending data and generating report... Please wait.';
-            statusMessage.style.display = 'block';
-            showTypingIndicator(true);
+        // Verifica limites de perguntas e imagens
+        function checkLimits() {
+            const questionLimitReached = currentQuestionIndex >= questions.length;
+            const imageLimitReached = uploadedImages.length >= MAX_IMAGES;
 
-            const payload = {
-                user_name: conversationData.userName,
-                company_name: conversationData.companyName,
-                business_name: conversationData.businessName,
-                business_type: conversationData.businessType,
-                role: conversationData.role,
-                questions_answers: conversationData.questions,
-                images: conversationData.uploadedFilesData // Envia array de {name, data}
+            if (questionLimitReached || imageLimitReached) {
+                if (!isFinished) {
+                    limitWarning.style.display = 'block';
+                    finishBtn.style.display = 'block';
+                    finishBtn.disabled = false;
+                    userInput.disabled = true;
+                    sendBtn.disabled = true;
+                    removeChoiceButtons();
+                }
+            }
+
+            // Atualiza estado do botão de upload
+            if (imageLimitReached) {
+                imageUpload.disabled = true;
+                document.querySelector('.file-upload-btn').style.cursor = 'not-allowed';
+                document.querySelector('.file-upload-btn').style.opacity = '0.7';
+            } else {
+                 imageUpload.disabled = isFinished; // Só desabilita se a conversa acabou
+                 document.querySelector('.file-upload-btn').style.cursor = isFinished ? 'not-allowed' : 'pointer';
+                 document.querySelector('.file-upload-btn').style.opacity = isFinished ? '0.7' : '1';
+            }
+        }
+
+        // Envia dados para o backend e mostra diagnóstico
+        async function getDiagnosis() {
+            if (!isFinished) return;
+
+            finishBtn.disabled = true;
+            finishBtn.textContent = '🧠 Analyzing... Please wait...';
+            statusMessage.textContent = 'Sending data for analysis...';
+            statusMessage.style.display = 'block';
+
+            // Prepara dados para envio
+            const dataToSend = {
+                ...userInfo,
+                questions: Object.values(userAnswers), // Envia o array de Q&A
+                images: uploadedImages, // Envia base64 das imagens
+                chatHistory: chatHistory // Envia histórico completo para email
             };
 
-            console.log("Sending payload:", JSON.stringify(payload, null, 2)); // Log para debug
-
             try {
+                statusMessage.textContent = 'Connecting to AI...';
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(dataToSend),
                 });
 
-                showTypingIndicator(false);
+                statusMessage.textContent = 'Processing analysis...';
 
                 if (!response.ok) {
-                    let errorMsg = `Error: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg += ` - ${errorData.error || 'Unknown backend error'}`;
-                    } catch (e) { /* Ignore if error response is not JSON */ }
-                    throw new Error(errorMsg);
+                    const errorData = await response.json().catch(() => ({ diagnosis_html: `<p>Error: ${response.statusText}. Could not parse error details.</p>` }));
+                    throw new Error(errorData.diagnosis_html || `HTTP error! status: ${response.status}`);
                 }
 
                 const result = await response.json();
 
-                console.log("Received result:", result); // Log para debug
-
-                // Mostra o diagnóstico formatado em HTML
-                addMessage('bot', result.diagnosis_html, true);
-                addMessage('bot', "I hope this analysis is helpful! Let me know if you have other businesses to analyze.");
-
                 statusMessage.textContent = 'Analysis complete!';
-                finishBtn.textContent = '✅ Analysis Complete';
+                setTimeout(() => { statusMessage.style.display = 'none'; }, 2000);
+
+                // Adiciona o diagnóstico como mensagem do bot
+                addMessage('bot', result.diagnosis_html, true);
+                finishBtn.textContent = 'Analysis Complete!';
+                // Opcional: Esconder o botão após completar
+                // finishBtn.style.display = 'none';
 
             } catch (error) {
                 console.error('Error fetching diagnosis:', error);
-                showTypingIndicator(false);
-                addMessage('bot', `Sorry, there was an error generating the report: ${error.message}. Please try again later or contact support.`);
-                statusMessage.textContent = 'Error generating report.';
-                finishBtn.textContent = '⚠️ Error - Try Again?'; // Permite tentar novamente
-                finishBtn.disabled = false; // Reabilita para tentar novamente
+                statusMessage.textContent = 'Error during analysis.';
+                // Mostra erro detalhado no chat
+                addMessage('bot', `<div class="diagnosis-box"><p><strong>Analysis Error</strong></p><p>Sorry, an error occurred while generating your analysis:</p><p><em>${error.message || 'Unknown error'}</em></p><p>Please check the console for more details or try again later.</p></div>`, true);
+                finishBtn.textContent = 'Analysis Failed - Retry?'; // Ou apenas 'Error'
+                finishBtn.disabled = false; // Permite tentar novamente?
             }
         }
 
-        // === MANIPULAÇÃO DE IMAGENS ===
+        // --- UPLOAD DE IMAGEM --- 
+        imageUpload.addEventListener('change', (event) => {
+            if (isFinished) return;
 
-        function handleImageUpload(event) {
             const files = event.target.files;
-            if (!files) return;
+            let filesProcessed = 0;
 
-            const currentImageCount = conversationData.uploadedFilesData.length;
-            const remainingSlots = conversationData.maxImages - currentImageCount;
-            const filesToProcess = Array.from(files).slice(0, remainingSlots);
+            for (let i = 0; i < files.length; i++) {
+                if (uploadedImages.length >= MAX_IMAGES) break;
 
-            if (files.length > remainingSlots) {
-                alert(`You can only upload ${conversationData.maxImages} images in total. ${remainingSlots} more slots available.`);
-            }
-
-            filesToProcess.forEach(file => {
-                if (!file.type.startsWith('image/')) {
-                    alert(`File ${file.name} is not an image.`);
-                    return;
-                }
-                if (file.size > 5 * 1024 * 1024) { // Limite de 5MB por imagem
-                     alert(`Image ${file.name} is too large (max 5MB).`);
-                     return;
-                }
-
+                const file = files[i];
                 const reader = new FileReader();
+
                 reader.onload = (e) => {
-                    const imageDataUrl = e.target.result;
-                    const fileData = { name: file.name, data: imageDataUrl };
-                    conversationData.uploadedFilesData.push(fileData);
-                    displayUploadedImage(fileData, conversationData.uploadedFilesData.length - 1);
-                    updateImageCounter();
-                };
+                    const base64String = e.target.result;
+                    const imageId = `img_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+                    uploadedImages.push({ id: imageId, name: file.name, data: base64String });
+                    displayUploadedImage(imageId, base64String);
+                    updateImageCount();
+                    checkLimits();
+                    filesProcessed++;
+                    if (filesProcessed === files.length || uploadedImages.length === MAX_IMAGES) {
+                         // Limpa o input para permitir selecionar o mesmo arquivo novamente se removido
+                         imageUpload.value = null;
+                    }
+                }
                 reader.readAsDataURL(file);
-            });
+            }
+        });
 
-            // Limpa o input para permitir selecionar o mesmo arquivo novamente
-            event.target.value = null;
-        }
-
-        function displayUploadedImage(fileData, index) {
+        function displayUploadedImage(id, base64) {
             const imgContainer = document.createElement('div');
             imgContainer.classList.add('uploaded-image');
-            imgContainer.dataset.index = index;
+            imgContainer.dataset.id = id;
 
             const img = document.createElement('img');
-            img.src = fileData.data;
-            img.alt = fileData.name;
+            img.src = base64;
+            img.alt = 'Uploaded image';
 
             const removeBtn = document.createElement('button');
             removeBtn.classList.add('remove-image');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.onclick = () => removeImage(index);
+            removeBtn.textContent = 'X';
+            removeBtn.onclick = () => removeImage(id);
 
             imgContainer.appendChild(img);
             imgContainer.appendChild(removeBtn);
-            uploadedImagesDiv.appendChild(imgContainer);
+            uploadedImagesContainer.appendChild(imgContainer);
         }
 
-        function removeImage(indexToRemove) {
-            conversationData.uploadedFilesData.splice(indexToRemove, 1);
-            // Re-renderiza as imagens com novos índices
-            uploadedImagesDiv.innerHTML = '';
-            conversationData.uploadedFilesData.forEach((fileData, i) => {
-                displayUploadedImage(fileData, i);
-            });
-            updateImageCounter();
+        function removeImage(id) {
+            uploadedImages = uploadedImages.filter(img => img.id !== id);
+            const imgElement = uploadedImagesContainer.querySelector(`.uploaded-image[data-id="${id}"]`);
+            if (imgElement) {
+                imgElement.remove();
+            }
+            updateImageCount();
+            checkLimits();
         }
 
-        function updateImageCounter() {
-            const count = conversationData.uploadedFilesData.length;
-            imageCountSpan.textContent = count;
-            if (count >= conversationData.maxImages) {
-                fileUploadBtn.style.pointerEvents = 'none';
-                fileUploadBtn.style.opacity = '0.5';
-                if (conversationData.questionCount < conversationData.maxQuestions) {
-                    limitWarning.textContent = `You've reached the image limit (${conversationData.maxImages}). Continue answering questions or finish the analysis.`;
-                    limitWarning.style.display = 'block';
-                }
-            } else {
-                if (messageInput.disabled === false) { // Só reabilita se o input estiver ativo
-                    fileUploadBtn.style.pointerEvents = 'auto';
-                    fileUploadBtn.style.opacity = '1';
-                }
-                limitWarning.style.display = 'none';
-            }
+        function updateImageCount() {
+            imageCountSpan.textContent = uploadedImages.length;
         }
 
-        // === EVENT LISTENERS ===
-        sendBtn.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message || conversationData.currentStep === 'ask_question') { // Permite envio vazio se for resposta de pergunta (pode indicar 'não sei')
-                nextStep(message);
-                messageInput.value = '';
-                messageInput.style.height = 'auto'; // Reseta altura do textarea
-            }
-        });
-
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Impede nova linha no textarea
-                sendBtn.click();
-            }
-        });
-
-        // Auto-ajuste da altura do textarea
-        messageInput.addEventListener('input', () => {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = (messageInput.scrollHeight) + 'px';
-        });
-
-        finishBtn.addEventListener('click', getDiagnosis);
-
-        imageUpload.addEventListener('change', handleImageUpload);
-
-        // === INICIALIZAÇÃO ===
-        introVideo.onended = () => {
-            console.log("Video ended");
+        // --- INICIALIZAÇÃO --- 
+        function startChat() {
+            // Esconde vídeo e mostra chat após transição
             introVideoContainer.classList.add('hidden');
-
-            // Espera a transição do vídeo terminar antes de mostrar o chat
             setTimeout(() => {
-                introVideoContainer.style.display = 'none'; // Remove da árvore DOM após transição
+                introVideoContainer.style.display = 'none'; // Remove da renderização
                 chatContainer.classList.add('visible');
-                startConversation(); // Inicia o chat após a intro
-            }, 1000); // Deve corresponder à duração da transição CSS
-        };
+                document.body.style.overflow = 'auto'; // Permite scroll no body se necessário
+                // Inicia a conversa
+                askNextQuestion();
+            }, 1000); // Tempo igual à transição de opacidade
+        }
 
-        // Fallback caso o evento onended não dispare (alguns browsers/cenários)
-        // Ou se o vídeo tiver algum problema
-        setTimeout(() => {
-             if (introVideoContainer.style.display !== 'none') {
-                 console.warn("Video end event fallback triggered.");
-                 if (introVideoContainer.classList.contains('hidden') == false) {
-                    introVideoContainer.classList.add('hidden');
-                    setTimeout(() => {
-                        introVideoContainer.style.display = 'none';
-                        chatContainer.classList.add('visible');
-                        startConversation();
-                    }, 1000);
-                 }
-             }
-        }, introVideo.duration ? (introVideo.duration * 1000) + 1500 : 10000); // Espera duração + 1.5s ou 10s
+        // Event listener para o fim do vídeo
+        introVideo.addEventListener('ended', startChat);
 
+        // Fallback: Se o vídeo não tocar ou falhar, inicia o chat após um tempo
+        const fallbackTimeout = setTimeout(startChat, 7000); // Ajuste o tempo se necessário
+        introVideo.addEventListener('play', () => clearTimeout(fallbackTimeout));
+        introVideo.addEventListener('error', startChat); // Inicia se houver erro no vídeo
 
-        // Inicializa a interface
-        updateProgress();
-        setInputEnabled(false); // Começa desabilitado durante a intro
-        updateImageCounter();
+        // Tenta dar play no vídeo (necessário para autoplay em alguns navegadores)
+        introVideo.play().catch(error => {
+            console.warn("Autoplay foi bloqueado, iniciando chat diretamente ou esperando interação.", error);
+            // Se o autoplay falhar, pode ser necessário um clique do usuário.
+            // Neste caso, o 'ended' não será disparado, então o fallback ou 'error' cuidará disso.
+            // Poderíamos adicionar um botão "Start" se o autoplay falhar consistentemente.
+        });
+
+        // Event listeners para input e botões
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Impede nova linha
+                handleUserInput();
+            }
+        });
+        sendBtn.addEventListener('click', handleUserInput);
+        finishBtn.addEventListener('click', getDiagnosis);
 
     </script>
 </body>
