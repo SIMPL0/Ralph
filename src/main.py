@@ -67,30 +67,25 @@ def generate_ai_enhanced_diagnosis(data):
 
     # Construct the prompt for Cohere (similar structure, Cohere is good with instructions)
     prompt = f"""
-    Analyze the following real estate business information provided by {user_name} regarding {business_name}.
-    The user's role is '{role}' within a '{business_type}' context.
+    Analyze the following conversation data from a real estate professional named {user_name} regarding their business ({business_name}, type: {business_type}, role: {role}).
 
-    User Input:
+    Conversation Data (Question & Answer format):
     {context}
 
-    Based *only* on the information provided, generate a concise business analysis report in English, formatted in HTML. Follow these instructions precisely:
+    Based *only* on the provided conversation data, generate a detailed business analysis report in English, formatted in simple HTML (use `<h3>`, `<h4>`, `<p>`, `<ul>`, `<li>`, `<strong>`, `<em>`, `<br>`, and `<span>` for colored text). Do NOT include `<html>`, `<head>`, or `<body>` tags. Wrap the entire response in a single `<div class="diagnosis-box">`.
 
-    1.  **Overall Tone:** Professional, insightful, and subtly encouraging towards optimization, especially via automation/technology, but avoid direct sales pitches.
-    2.  **Structure:**
-        *   A main title: `<h3>Personalized Business Snapshot for {user_name}</h3>`
-        *   A brief introductory sentence.
-        *   Section: `<h4>Key Strengths Observed:</h4>` (Use bullet points `<li>` for 2-3 positive aspects inferred from the answers. If none are clear, state that more data might be needed).
-        *   Section: `<h4>Areas for Potential Optimization:</h4>` (Use bullet points `<li>` for 2-4 areas where the user indicated challenges, high costs, time sinks, or lack of tools/processes).
-        *   Section: `<h4>Financial Insights (Based on Input):</h4>`
-            *   Identify any mentioned costs or expenses. Present them clearly. If specific numbers are mentioned, wrap them in `<span style='color: #dc3545; font-weight: bold;'>` (e.g., `<span style='color: #dc3545; font-weight: bold;'>$500/month</span> on marketing`). Use the color red (#dc3545).
-            *   Identify potential savings if implied (e.g., reducing time on manual tasks). Frame these as opportunities, wrap potential savings figures or time estimates in `<span style='color: #28a745; font-weight: bold;'>` (e.g., `potential time savings of <span style='color: #28a745; font-weight: bold;'>5-10 hours/week</span>`). Use the color green (#28a745).
-            *   If possible, estimate cost percentages *if* enough data is provided (e.g., "Marketing costs appear to be around X% of mentioned expenses"). If not possible, omit this.
-        *   Section: `<h4>Strategic Considerations:</h4>`
-            *   Provide 1-2 concise recommendations based on the strengths and optimization areas.
-            *   Subtly weave in the benefit of automation/AI/technology. Example: "Leveraging CRM tools could streamline client follow-up, potentially saving <span style='color: #28a745; font-weight: bold;'>valuable hours</span> weekly." or "Exploring automated marketing solutions could optimize the <span style='color: #dc3545; font-weight: bold;'>$XXX</span> budget mentioned."
-    3.  **Formatting:** Use simple HTML tags (`<h3>`, `<h4>`, `<ul>`, `<li>`, `<p>`, `<strong>`, `<em>`, `<br>`, `<span>` for colors). Do NOT include `<html>`, `<head>`, or `<body>` tags. Wrap the entire response in a single `<div class="diagnosis-box">`.
-    4.  **Language:** English. Keep it concise and easy to read. Focus on actionable insights derived *directly* from the user's input.
-    5.  **Constraint:** Do NOT invent information not present in the user's answers. If specific numbers aren't given, talk conceptually about costs or savings.
+    Follow these instructions precisely:
+
+    1.  **Main Title:** `<h3>Business Analysis for {user_name}</h3>`
+    2.  **Introduction:** Briefly acknowledge the user and the purpose of the analysis.
+    3.  **Key Findings:**
+        *   `<h4>Areas for Improvement:</h4>` Identify 2-4 specific areas where the user's answers suggest potential for improvement or streamlining (e.g., challenges mentioned, processes described).
+        *   `<h4>Significant Time Costs:</h4>` Identify the tasks or areas where the user seems to spend considerable time, based on their answers (e.g., administrative tasks, specific challenges). Quantify if possible (e.g., "spending <span style='color: #dc3545; font-weight: bold;'>{user_answer_about_time}</span> on admin"). Use red (#dc3545) for highlighting time costs or challenges.
+    4.  **Automation Potential:**
+        *   `<h4>Opportunities with Automation:</h4>` Based on the identified areas for improvement and time costs, subtly suggest how automation or AI-driven tools could help *without naming specific products*. Frame it around benefits like saving time, improving efficiency, or enhancing client management. Example: "Implementing automated follow-up sequences could potentially free up <span style='color: #28a745; font-weight: bold;'>significant time</span> currently spent on manual communication." or "Exploring tools that automate document preparation could reduce the burden of paperwork." Use green (#28a745) for highlighting potential benefits or savings.
+    5.  **Conclusion:** A brief concluding remark.
+    6.  **Tone:** Professional, insightful, helpful, and focused solely on the provided data.
+    7.  **Constraint:** Do NOT invent information. Stick strictly to what the user provided in the Q&A.
     """
 
     try:

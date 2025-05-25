@@ -15,7 +15,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             /* Fundo escuro com gradiente sutil */
-            background: linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%);
+            background: #ffffff; /* Initial white background */
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -1127,9 +1127,10 @@
                 // Após a transição do vídeo, desativa o overlay e mostra o chat
                 setTimeout(() => {
                     transitionOverlay.classList.remove('active');
-                    introVideoContainer.style.display = 'none'; // Remove da renderização
-                    chatContainer.classList.add('visible');
-                    document.body.style.overflow = 'auto'; // Permite scroll no body se necessário
+                    introVideoContainer.style.display = 'none'; // Remove            setTimeout(() => {
+                document.body.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%)'; // Change background
+                chatContainer.classList.add('visible');
+                document.body.style.overflow = 'auto'; // Restaura scroll se necessárioo
                     
                     // Inicia a conversa com animação de entrada
                     setTimeout(() => {
