@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ralph - Real Estate Business Analysis (v6 - Enhanced)</title>
+    <style>
+        /* === ESTILOS GERAIS === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Fundo escuro com gradiente sutil */
+            background: linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden; /* Evita scrollbars durante a intro */
+        }
+
+        /* === INTRO VIDEO === */
+        #intro-video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white; /* Fundo branco para transição */
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 1s ease-out;
+        }
+
+        #intro-video-container.hidden {
+            opacity: 0;
+            pointer-events: none; /* Impede interação após desaparecer */
+        }
+
+        #intro-video {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        /* === CHAT CONTAINER (Inicialmente oculto) === */
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); /* Sombra mais pronunciada no fundo escuro */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0; /* Começa invisível */
+            transition: opacity 1s ease-in; /* Animação fade-in */
+        }
+
+        .chat-container.visible {
+            opacity: 1;
+        }
+
+        /* === CHAT HEADER (Cor escura) === */
+        .chat-header {
+            background: #100f0f; /* Nova cor escura */
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .ai-name {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2); /* Fundo da barra mais visível */
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* === CHAT MESSAGES (Fundo claro mantido) === */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa; /* Fundo claro para contraste */
+        }
+
+        .message {
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .message.bot {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Avatar com nova cor */
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            background: #100f0f; /* Nova cor escura */
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+
+        /* Mensagem do Bot (fundo branco mantido) */
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Estilos para a caixa de diagnóstico (mantidos) */
+        .message.bot .diagnosis-box {
+             margin-top: 10px;
+             line-height: 1.5;
+             border: 1px solid #eee;
+             padding: 15px;
+             border-radius: 10px;
+             background-color: #fdfdfd;
+        }
+        .message.bot .diagnosis-box h3 {
+            font-size: 1.2em;
+            color: #100f0f;
+            margin-bottom: 10px;
+        }
+        .message.bot .diagnosis-box h4 {
+             margin-top: 15px;
+             margin-bottom: 8px;
+             font-size: 1.1em;
+             color: #333;
+        }
+         .message.bot .diagnosis-box ul {
+            list-style: none;
+            padding-left: 5px;
+            margin-bottom: 10px;
+        }
+        .message.bot .diagnosis-box li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+            color: #555;
+        }
+        /* Bullet customizado */
+        .message.bot .diagnosis-box li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background-color: #100f0f;
+            border-radius: 50%;
+            position: absolute;
+            left: 5px;
+            top: 8px;
+        }
+        /* Estilos específicos para pontos positivos e negativos (serão aplicados via span no backend) */
+        .diagnosis-positive {
+            color: #28a745; /* Verde */
+            font-weight: bold;
+        }
+        .diagnosis-negative {
+            color: #dc3545; /* Vermelho */
+            font-weight: bold;
+        }
+         .message.bot .diagnosis-box p {
+            margin-bottom: 12px;
+            font-size: 0.98em;
+            color: #444;
+        }
+         .message.bot .diagnosis-box em {
+            font-size: 0.9em;
+            color: #6c757d;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* Mensagem do Usuário (cor escura) */
+        .message.user .message-content {
+            background: #100f0f; /* Nova cor escura */
+            color: white;
+            border-bottom-right-radius: 5px;
+            max-width: 70%;
+        }
+
+        /* === INPUT CONTAINER === */
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            color: #333;
+        }
+
+        .input-field:focus {
+            border-color: #555; /* Cinza escuro para foco */
+        }
+
+        .input-field:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        /* Botão Enviar (cor escura) */
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: #100f0f; /* Nova cor escura */
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            background-color: #333; /* Leve clareada no hover */
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            background-color: #100f0f;
+        }
+
+        /* === FILE UPLOAD (Botão com cor escura) === */
+        .file-upload {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-btn {
+            padding: 10px 20px;
+            background: #100f0f; /* Nova cor escura */
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .file-upload-btn:hover {
+            transform: translateY(-2px);
+            background-color: #333; /* Leve clareada no hover */
+        }
+
+        .uploaded-images {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .uploaded-image {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e9ecef;
+        }
+
+        .uploaded-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* === TYPING INDICATOR (Cor ajustada) === */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+            margin-left: 10px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #555; /* Cinza escuro */
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* === BOTÕES (Tipo de negócio e Finalizar - Cores ajustadas) === */
+        .business-type-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .business-type-btn {
+            padding: 15px 20px;
+            background: #100f0f; /* Nova cor escura */
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .business-type-btn:hover {
+            transform: translateY(-2px);
+            background-color: #333; /* Leve clareada no hover */
+        }
+
+        .finish-btn {
+            width: 100%;
+            padding: 15px;
+            /* Gradiente cinza escuro para finalizar */
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            display: none;
+        }
+
+        .finish-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #444 0%, #333 100%); /* Clareada no hover */
+        }
+
+        .finish-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* === OUTROS === */
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .status-message {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Intro Video Container -->
+    <div id="intro-video-container">
+        <video id="intro-video" src="intro_video.mp4" autoplay muted playsinline></video>
+    </div>
+
+    <!-- Chat Container (initially hidden) -->
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            <div class="ai-name">Ralph</div>
+            <h1>🏠 Real Estate Business Analyzer</h1>
+            <p>Discover optimization opportunities for your real estate business</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <!-- Mensagem inicial (será adicionada via JS após intro) -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="avatar">🤖</div>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="warning" id="limitWarning" style="display: none;">
+                You've reached the limit of questions or images. Finish the analysis to receive your complete diagnosis!
+            </div>
+
+            <div class="file-upload">
+                <input type="file" id="imageUpload" accept="image/*" multiple>
+                <label for="imageUpload" class="file-upload-btn" type="button">
+                    📷 Upload Business Photos (<span id="imageCount">0</span>/5)
+                </label>
+                <div class="uploaded-images" id="uploadedImages"></div>
+            </div>
+
+            <div class="input-group">
+                <textarea
+                    class="input-field"
+                    id="messageInput"
+                    placeholder="Type your answer here..."
+                    rows="1"
+                    disabled /* Desabilitado até o chat iniciar */
+                ></textarea>
+                <button class="send-btn" id="sendBtn" type="button" disabled> <!-- Desabilitado até o chat iniciar -->
+                    ➤
+                </button>
+            </div>
+
+            <button class="finish-btn" id="finishBtn" type="button" disabled>
+                🎯 Complete Analysis & Get Diagnosis
+            </button>
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // === ELEMENTOS DOM ===
+        const introVideoContainer = document.getElementById('intro-video-container');
+        const introVideo = document.getElementById('intro-video');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const finishBtn = document.getElementById('finishBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const progressFill = document.getElementById('progressFill');
+        const imageUpload = document.getElementById('imageUpload');
+        const imageCountSpan = document.getElementById('imageCount');
+        const uploadedImagesDiv = document.getElementById('uploadedImages');
+        const limitWarning = document.getElementById('limitWarning');
+        const statusMessage = document.getElementById('statusMessage');
+        const fileUploadBtn = document.querySelector('.file-upload-btn'); // Usar querySelector para o label
+
+        // === CONFIGURAÇÃO ===
+        // Use uma URL relativa ou absoluta dependendo de onde o backend está rodando
+        // Se o HTML e o backend estiverem no mesmo servidor/domínio:
+        const BACKEND_URL = '/analyze'; 
+        // Se estiverem separados (ex: frontend no GitHub Pages, backend no Render):
+        // const BACKEND_URL = 'COLOQUE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
+        // ====================
+
+        // Estado da Aplicação
+        let conversationData = {
+            userName: '', companyName: '', businessName: '', businessType: '', role: '',
+            questions: [], images: [], questionCount: 0, maxQuestions: 15, maxImages: 5,
+            analysisComplete: false, currentStep: 'intro', chatHistory: [], // Inicia no 'intro'
+            uploadedFilesData: [] // Para armazenar nome e base64 das imagens
+        };
+
+        // Listas de Perguntas (mantidas)
+        const individualQuestions = [
+            "How long have you been working as a realtor?", "What's your primary market area (city/region)?", "How many transactions do you typically close per month?", "What's your main lead generation method currently?", "Do you work with a team or operate solo?", "What's your biggest challenge in managing client relationships?", "How do you currently manage your listings and showings?", "What marketing channels do you use most (social media, websites, etc.)?", "How much time do you spend on administrative tasks daily?", "What's your follow-up process with potential clients?", "Do you use any CRM or real estate management software?", "What's your biggest monthly expense category?", "How do you handle client communication and updates?", "What aspects of your business feel most time-consuming?", "What would help you close more deals faster?"
+        ];
+        const companyOwnerQuestions = [
+            "How many agents work with you?", "How long has your real estate company been operating?", "What's your company's primary market focus (residential, commercial, luxury)?", "How do you currently generate leads for your agents?", "What's your agent commission structure?", "How do you handle marketing for listings company-wide?", "What's your biggest operational challenge right now?", "How do you manage agent training and onboarding?", "What technology stack does your company use?", "How do you track and measure agent performance?", "What are your main overhead costs (office, marketing, staff)?", "How do you handle client referrals and lead distribution?", "What's your process for managing multiple listings?", "How do you maintain brand consistency across agents?", "What would most improve your company's profitability?"
+        ];
+        const companyEmployeeQuestions = [
+            "What's your role in the company?", "How long have you been with your current company?", "How many transactions do you handle monthly?", "What support does your company provide for lead generation?", "How satisfied are you with your current commission split?", "What tools and systems does your company provide?", "What's your biggest challenge in your day-to-day work?", "How does your company handle internal communication?", "What training opportunities are available to you?", "How are leads typically assigned to you?", "What marketing support do you receive?", "How is your performance evaluated?", "What administrative tasks take up most of your time?", "What could the company do better to support its employees?", "What technology would make your job easier?"
+        ];
+
+        // === FUNÇÕES AUXILIARES ===
+
+        // Adiciona mensagem ao chat
+        function addMessage(sender, content, isHTML = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.classList.add('avatar');
+            avatarDiv.textContent = sender === 'bot' ? '🤖' : '👤';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('message-content');
+            if (isHTML) {
+                contentDiv.innerHTML = content; // Usa innerHTML para renderizar HTML
+            } else {
+                contentDiv.textContent = content;
+            }
+
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+
+            // Scroll para a última mensagem
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Adiciona ao histórico
+            conversationData.chatHistory.push({ sender, content });
+        }
+
+        // Mostra/oculta indicador de digitação
+        function showTypingIndicator(show) {
+            typingIndicator.style.display = show ? 'flex' : 'none';
+            if (show) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // Atualiza barra de progresso
+        function updateProgress() {
+            const progress = Math.min(100, (conversationData.questionCount / conversationData.maxQuestions) * 100);
+            progressFill.style.width = `${progress}%`;
+        }
+
+        // Habilita/desabilita input e botões
+        function setInputEnabled(enabled) {
+            messageInput.disabled = !enabled;
+            sendBtn.disabled = !enabled;
+            fileUploadBtn.style.pointerEvents = enabled ? 'auto' : 'none';
+            fileUploadBtn.style.opacity = enabled ? '1' : '0.5';
+            if (!enabled) {
+                messageInput.placeholder = 'Waiting for response...';
+            } else {
+                // Define o placeholder adequado para a etapa atual
+                switch (conversationData.currentStep) {
+                    case 'ask_name': messageInput.placeholder = 'Your name...'; break;
+                    case 'ask_business_type': messageInput.placeholder = 'Choose an option above...'; break; // Placeholder enquanto botões são mostrados
+                    case 'ask_company_name': messageInput.placeholder = 'Your company name...'; break;
+                    case 'ask_business_name': messageInput.placeholder = 'Your business name...'; break;
+                    case 'ask_role': messageInput.placeholder = 'Your role...'; break;
+                    case 'ask_question': messageInput.placeholder = 'Type your answer here...'; break;
+                    default: messageInput.placeholder = 'Type your answer here...';
+                }
+            }
+        }
+
+        // === LÓGICA DO CHAT ===
+
+        // Inicia a conversa
+        function startConversation() {
+            conversationData.currentStep = 'ask_name';
+            addMessage('bot', "Hello! 👋 I'm Ralph, your real estate business analyst. I'll conduct a comprehensive analysis of your business to identify optimization opportunities and cost savings.\n\nTo start, <strong>what's your name?</strong>", true);
+            setInputEnabled(true);
+            messageInput.focus();
+        }
+
+        // Próxima etapa da conversa
+        function nextStep(userInput = null) {
+            setInputEnabled(false);
+            if (userInput) {
+                addMessage('user', userInput);
+                conversationData.questions.push({ question: getCurrentQuestionPrompt(), answer: userInput });
+            }
+
+            showTypingIndicator(true);
+
+            // Simula um pequeno delay da IA pensando
+            setTimeout(() => {
+                showTypingIndicator(false);
+                handleCurrentStep(userInput);
+                // Habilita input apenas se a análise não estiver completa
+                if (!conversationData.analysisComplete) {
+                    setInputEnabled(true);
+                    messageInput.focus();
+                }
+            }, 800 + Math.random() * 500); // Delay aleatório entre 0.8s e 1.3s
+        }
+
+        // Obtém o texto da pergunta atual (para salvar no histórico)
+        function getCurrentQuestionPrompt() {
+            const lastBotMessage = conversationData.chatHistory.filter(m => m.sender === 'bot').pop();
+            // Simplificação: Pega a última mensagem do bot como prompt. Pode precisar de ajuste.
+            // Remove tags HTML para o prompt salvo
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = lastBotMessage?.content || 'Unknown Question';
+            return tempDiv.textContent || tempDiv.innerText || 'Unknown Question';
+        }
+
+        // Gerencia a lógica de cada etapa
+        function handleCurrentStep(userInput) {
+            switch (conversationData.currentStep) {
+                case 'ask_name':
+                    if (userInput && userInput.trim()) {
+                        conversationData.userName = userInput.trim();
+                        conversationData.currentStep = 'ask_business_type';
+                        askBusinessType();
+                    } else {
+                        addMessage('bot', "Please tell me your name so we can get started.");
+                    }
+                    break;
+
+                case 'ask_business_type':
+                    // A seleção é feita por botão, não por input de texto
+                    // A função handleBusinessTypeSelection cuida disso
+                    break;
+
+                case 'ask_company_name':
+                    if (userInput && userInput.trim()) {
+                        conversationData.companyName = userInput.trim();
+                        conversationData.currentStep = 'ask_question';
+                        askNextQuestion();
+                    } else {
+                        addMessage('bot', "Please provide your company name.");
+                    }
+                    break;
+
+                case 'ask_business_name':
+                     if (userInput && userInput.trim()) {
+                        conversationData.businessName = userInput.trim();
+                        conversationData.currentStep = 'ask_question';
+                        askNextQuestion();
+                    } else {
+                        addMessage('bot', "Please provide your business name.");
+                    }
+                    break;
+
+                case 'ask_role':
+                    if (userInput && userInput.trim()) {
+                        conversationData.role = userInput.trim();
+                        conversationData.currentStep = 'ask_question';
+                        askNextQuestion();
+                    } else {
+                        addMessage('bot', "Please tell me your role in the company.");
+                    }
+                    break;
+
+                case 'ask_question':
+                    if (userInput && userInput.trim()) {
+                        conversationData.questionCount++;
+                        updateProgress();
+                        if (conversationData.questionCount >= conversationData.maxQuestions) {
+                            finishAnalysis();
+                        } else {
+                            askNextQuestion();
+                        }
+                    } else {
+                        // Repete a última pergunta se a resposta for vazia
+                        const lastQuestion = conversationData.questions[conversationData.questions.length - 1]?.question || "Could you please provide an answer?";
+                        addMessage('bot', `Please provide an answer for: "${lastQuestion}"`);
+                    }
+                    break;
+
+                case 'analysis_complete':
+                    // Nenhuma ação necessária aqui, o botão Finalizar cuida disso
+                    break;
+            }
+        }
+
+        // Pergunta o tipo de negócio (com botões)
+        function askBusinessType() {
+            const messageContent = `Nice to meet you, ${conversationData.userName}! 
+            <br><br>To tailor the analysis, please select your situation:
+            <div class="business-type-selector">
+                <button class="business-type-btn" onclick="handleBusinessTypeSelection('individual')">👤 I'm an Individual Realtor/Broker</button>
+                <button class="business-type-btn" onclick="handleBusinessTypeSelection('company_owner')">🏢 I'm the Owner of a Real Estate Company</button>
+                <button class="business-type-btn" onclick="handleBusinessTypeSelection('company_employee')">🧑‍💼 I'm an Employee at a Real Estate Company</button>
+            </div>`;
+            addMessage('bot', messageContent, true);
+            setInputEnabled(false); // Desabilita input de texto, espera clique no botão
+            messageInput.placeholder = 'Choose an option above...';
+        }
+
+        // Lida com a seleção do tipo de negócio
+        function handleBusinessTypeSelection(type) {
+            // Remove os botões da mensagem anterior para limpar a interface
+            const lastBotMessageContent = chatMessages.querySelector('.message.bot:last-child .message-content');
+            if (lastBotMessageContent) {
+                const selector = lastBotMessageContent.querySelector('.business-type-selector');
+                if (selector) selector.remove();
+            }
+
+            conversationData.businessType = type;
+            let userFriendlyType = '';
+
+            switch (type) {
+                case 'individual':
+                    userFriendlyType = 'Individual Realtor/Broker';
+                    addMessage('user', `Selected: ${userFriendlyType}`);
+                    conversationData.currentStep = 'ask_business_name'; // Pergunta nome do negócio individual
+                    addMessage('bot', "Great! What's the name of your real estate business or practice?");
+                    break;
+                case 'company_owner':
+                    userFriendlyType = 'Owner of a Real Estate Company';
+                    addMessage('user', `Selected: ${userFriendlyType}`);
+                    conversationData.currentStep = 'ask_company_name';
+                    addMessage('bot', "Understood. What is the name of your company?");
+                    break;
+                case 'company_employee':
+                    userFriendlyType = 'Employee at a Real Estate Company';
+                    addMessage('user', `Selected: ${userFriendlyType}`);
+                    conversationData.currentStep = 'ask_company_name'; // Primeiro pergunta nome da empresa
+                    addMessage('bot', "Got it. What is the name of the company you work for?");
+                    // Após obter nome da empresa, perguntará o cargo
+                    break;
+            }
+
+            setInputEnabled(true);
+            messageInput.focus();
+        }
+
+        // Pergunta a próxima questão baseada no tipo de negócio
+        function askNextQuestion() {
+            let questionList;
+            if (conversationData.businessType === 'individual') {
+                questionList = individualQuestions;
+            } else if (conversationData.businessType === 'company_owner') {
+                questionList = companyOwnerQuestions;
+            } else { // company_employee
+                // Se ainda não perguntou o cargo, pergunta agora
+                if (!conversationData.role && conversationData.companyName) {
+                    conversationData.currentStep = 'ask_role';
+                    addMessage('bot', "Thanks! And what is your specific role within the company?");
+                    return; // Sai para esperar a resposta do cargo
+                }
+                questionList = companyEmployeeQuestions;
+            }
+
+            if (conversationData.questionCount < conversationData.maxQuestions && conversationData.questionCount < questionList.length) {
+                const nextQuestion = questionList[conversationData.questionCount];
+                addMessage('bot', `(${conversationData.questionCount + 1}/${conversationData.maxQuestions}) ${nextQuestion}`);
+                conversationData.currentStep = 'ask_question'; // Garante que a próxima resposta seja tratada como resposta de pergunta
+            } else {
+                finishAnalysis();
+            }
+        }
+
+        // Finaliza a fase de perguntas
+        function finishAnalysis() {
+            conversationData.analysisComplete = true;
+            setInputEnabled(false);
+            limitWarning.style.display = 'none'; // Esconde aviso de limite se houver
+            addMessage('bot', "Thanks for all the information! We've completed the question phase. Click the button below to generate your personalized business diagnosis.");
+            finishBtn.style.display = 'block';
+            finishBtn.disabled = false;
+        }
+
+        // Envia dados para o backend e mostra o resultado
+        async function getDiagnosis() {
+            finishBtn.disabled = true;
+            finishBtn.textContent = '🧠 Analyzing...';
+            statusMessage.textContent = 'Sending data and generating report... Please wait.';
+            statusMessage.style.display = 'block';
+            showTypingIndicator(true);
+
+            const payload = {
+                user_name: conversationData.userName,
+                company_name: conversationData.companyName,
+                business_name: conversationData.businessName,
+                business_type: conversationData.businessType,
+                role: conversationData.role,
+                questions_answers: conversationData.questions,
+                images: conversationData.uploadedFilesData // Envia array de {name, data}
+            };
+
+            console.log("Sending payload:", JSON.stringify(payload, null, 2)); // Log para debug
+
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                showTypingIndicator(false);
+
+                if (!response.ok) {
+                    let errorMsg = `Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg += ` - ${errorData.error || 'Unknown backend error'}`;
+                    } catch (e) { /* Ignore if error response is not JSON */ }
+                    throw new Error(errorMsg);
+                }
+
+                const result = await response.json();
+
+                console.log("Received result:", result); // Log para debug
+
+                // Mostra o diagnóstico formatado em HTML
+                addMessage('bot', result.diagnosis_html, true);
+                addMessage('bot', "I hope this analysis is helpful! Let me know if you have other businesses to analyze.");
+
+                statusMessage.textContent = 'Analysis complete!';
+                finishBtn.textContent = '✅ Analysis Complete';
+
+            } catch (error) {
+                console.error('Error fetching diagnosis:', error);
+                showTypingIndicator(false);
+                addMessage('bot', `Sorry, there was an error generating the report: ${error.message}. Please try again later or contact support.`);
+                statusMessage.textContent = 'Error generating report.';
+                finishBtn.textContent = '⚠️ Error - Try Again?'; // Permite tentar novamente
+                finishBtn.disabled = false; // Reabilita para tentar novamente
+            }
+        }
+
+        // === MANIPULAÇÃO DE IMAGENS ===
+
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            if (!files) return;
+
+            const currentImageCount = conversationData.uploadedFilesData.length;
+            const remainingSlots = conversationData.maxImages - currentImageCount;
+            const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+            if (files.length > remainingSlots) {
+                alert(`You can only upload ${conversationData.maxImages} images in total. ${remainingSlots} more slots available.`);
+            }
+
+            filesToProcess.forEach(file => {
+                if (!file.type.startsWith('image/')) {
+                    alert(`File ${file.name} is not an image.`);
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) { // Limite de 5MB por imagem
+                     alert(`Image ${file.name} is too large (max 5MB).`);
+                     return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageDataUrl = e.target.result;
+                    const fileData = { name: file.name, data: imageDataUrl };
+                    conversationData.uploadedFilesData.push(fileData);
+                    displayUploadedImage(fileData, conversationData.uploadedFilesData.length - 1);
+                    updateImageCounter();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Limpa o input para permitir selecionar o mesmo arquivo novamente
+            event.target.value = null;
+        }
+
+        function displayUploadedImage(fileData, index) {
+            const imgContainer = document.createElement('div');
+            imgContainer.classList.add('uploaded-image');
+            imgContainer.dataset.index = index;
+
+            const img = document.createElement('img');
+            img.src = fileData.data;
+            img.alt = fileData.name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.classList.add('remove-image');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.onclick = () => removeImage(index);
+
+            imgContainer.appendChild(img);
+            imgContainer.appendChild(removeBtn);
+            uploadedImagesDiv.appendChild(imgContainer);
+        }
+
+        function removeImage(indexToRemove) {
+            conversationData.uploadedFilesData.splice(indexToRemove, 1);
+            // Re-renderiza as imagens com novos índices
+            uploadedImagesDiv.innerHTML = '';
+            conversationData.uploadedFilesData.forEach((fileData, i) => {
+                displayUploadedImage(fileData, i);
+            });
+            updateImageCounter();
+        }
+
+        function updateImageCounter() {
+            const count = conversationData.uploadedFilesData.length;
+            imageCountSpan.textContent = count;
+            if (count >= conversationData.maxImages) {
+                fileUploadBtn.style.pointerEvents = 'none';
+                fileUploadBtn.style.opacity = '0.5';
+                if (conversationData.questionCount < conversationData.maxQuestions) {
+                    limitWarning.textContent = `You've reached the image limit (${conversationData.maxImages}). Continue answering questions or finish the analysis.`;
+                    limitWarning.style.display = 'block';
+                }
+            } else {
+                if (messageInput.disabled === false) { // Só reabilita se o input estiver ativo
+                    fileUploadBtn.style.pointerEvents = 'auto';
+                    fileUploadBtn.style.opacity = '1';
+                }
+                limitWarning.style.display = 'none';
+            }
+        }
+
+        // === EVENT LISTENERS ===
+        sendBtn.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message || conversationData.currentStep === 'ask_question') { // Permite envio vazio se for resposta de pergunta (pode indicar 'não sei')
+                nextStep(message);
+                messageInput.value = '';
+                messageInput.style.height = 'auto'; // Reseta altura do textarea
+            }
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Impede nova linha no textarea
+                sendBtn.click();
+            }
+        });
+
+        // Auto-ajuste da altura do textarea
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = (messageInput.scrollHeight) + 'px';
+        });
+
+        finishBtn.addEventListener('click', getDiagnosis);
+
+        imageUpload.addEventListener('change', handleImageUpload);
+
+        // === INICIALIZAÇÃO ===
+        introVideo.onended = () => {
+            console.log("Video ended");
+            introVideoContainer.classList.add('hidden');
+
+            // Espera a transição do vídeo terminar antes de mostrar o chat
+            setTimeout(() => {
+                introVideoContainer.style.display = 'none'; // Remove da árvore DOM após transição
+                chatContainer.classList.add('visible');
+                startConversation(); // Inicia o chat após a intro
+            }, 1000); // Deve corresponder à duração da transição CSS
+        };
+
+        // Fallback caso o evento onended não dispare (alguns browsers/cenários)
+        // Ou se o vídeo tiver algum problema
+        setTimeout(() => {
+             if (introVideoContainer.style.display !== 'none') {
+                 console.warn("Video end event fallback triggered.");
+                 if (introVideoContainer.classList.contains('hidden') == false) {
+                    introVideoContainer.classList.add('hidden');
+                    setTimeout(() => {
+                        introVideoContainer.style.display = 'none';
+                        chatContainer.classList.add('visible');
+                        startConversation();
+                    }, 1000);
+                 }
+             }
+        }, introVideo.duration ? (introVideo.duration * 1000) + 1500 : 10000); // Espera duração + 1.5s ou 10s
+
+
+        // Inicializa a interface
+        updateProgress();
+        setInputEnabled(false); // Começa desabilitado durante a intro
+        updateImageCounter();
+
+    </script>
+</body>
+</html>
+
