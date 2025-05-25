@@ -7,10 +7,10 @@ import html
 import cohere # Import Cohere library
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app) # Allow requests from the frontend
 
 # --- Configuration from Environment Variables ---
@@ -55,7 +55,7 @@ def generate_ai_enhanced_diagnosis(data):
 
     # Prepare context for AI (same as before)
     context = f"User Name: {user_name}\n"
-    if data.get("companyName"): context += f"Company Name: {data["companyName"]}\n"
+    if data.get("companyName"): context += f"Company Name: {data['companyName']}\n"
     if business_name != "their business": context += f"Business Name: {business_name}\n"
     context += f"Business Type: {business_type}\n"
     if role: context += f"Role: {role}\n\n"
@@ -94,7 +94,6 @@ def generate_ai_enhanced_diagnosis(data):
     """
 
     try:
-<<<<<<< HEAD
         print("\n--- Sending request to Cohere ---")
         # Generate content using Cohere's generate endpoint
         response = cohere_client.generate(
@@ -106,18 +105,6 @@ def generate_ai_enhanced_diagnosis(data):
             p=0.75,
             stop_sequences=[],
             return_likelihoods='NONE'
-=======
-        print("\n--- Sending request to OpenAI ---")
-        # print(f"Prompt: {prompt[:500]}...") # Log prompt start for debugging
-        completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo", # Or use "gpt-4" if available/preferred
-            messages=[
-                {"role": "system", "content": "You are an expert business analyst specializing in the real estate sector. Generate concise, actionable HTML reports based on user inputs."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.5, # Slightly creative but mostly factual
-            max_tokens=4000 # Adjust token limit as needed
->>>>>>> c5b5da437fe4e4ae8da830fe2cf36dda016bbb07
         )
         print("--- Cohere response received ---")
 
@@ -169,6 +156,14 @@ def send_email_notification(subject, html_body):
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory(app.static_folder, path)
 
 @app.route("/analyze", methods=["POST"])
 def analyze_data():
@@ -286,4 +281,3 @@ def analyze_data():
 if __name__ == "__main__":
     # This part is mainly for local testing, Render uses the gunicorn command
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
