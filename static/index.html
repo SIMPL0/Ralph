@@ -31,13 +31,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: white; /* Fundo branco para transição */
+            background-color: #100f0f; /* Fundo escuro para combinar com o tema */
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
             opacity: 1;
-            transition: opacity 1s ease-out;
+            transition: opacity 1.5s ease-out; /* Transição mais suave */
         }
 
         #intro-video-container.hidden {
@@ -92,11 +92,13 @@
             flex-direction: column;
             overflow: hidden;
             opacity: 0; /* Começa invisível */
-            transition: opacity 1s ease-in; /* Animação fade-in */
+            transform: translateY(20px); /* Começa ligeiramente abaixo */
+            transition: opacity 1.5s ease-in, transform 1.5s ease-out; /* Animação combinada */
         }
 
         .chat-container.visible {
             opacity: 1;
+            transform: translateY(0); /* Move para posição final */
         }
 
         /* === CHAT HEADER (Cor escura) === */
@@ -505,9 +507,41 @@
             color: #555;
         }
 
+        /* === ANIMAÇÃO DE TRANSIÇÃO === */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Overlay de transição para efeito de fade */
+        #transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #100f0f;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        #transition-overlay.active {
+            opacity: 1;
+        }
+
     </style>
 </head>
 <body>
+    <!-- Overlay de transição para efeito de fade -->
+    <div id="transition-overlay"></div>
 
     <!-- Intro Video Container -->
     <div id="intro-video-container">
@@ -528,200 +562,295 @@
 
         <div class="chat-messages" id="chatMessages">
             <!-- Mensagem inicial (será adicionada via JS após intro) -->
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="avatar">🤖</div>
+        </div>
+
+        <div class="input-container">
+            <div class="file-upload">
+                <input type="file" id="imageUpload" accept="image/*" multiple>
+                <label for="imageUpload" class="file-upload-btn">📷 Upload Images (<span id="imageCount">0</span>/<span id="maxImages">3</span>)</label>
+                <div class="uploaded-images" id="uploadedImagesContainer"></div>
+            </div>
+            <div id="limitWarning" class="warning" style="display: none;">
+                You've reached the maximum number of questions or images. Click "Get Analysis" to proceed.
+            </div>
+            <div class="input-group">
+                <textarea id="userInput" class="input-field" placeholder="Type your message here..." rows="1"></textarea>
+                <button id="sendBtn" class="send-btn">➤</button>
+            </div>
+            <button id="finishBtn" class="finish-btn" disabled>🧠 Get AI Analysis</button>
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO INICIAL ---
+        const BACKEND_URL = '/analyze'; // URL do backend (relativa para o mesmo servidor)
+        const MAX_IMAGES = 3; // Limite de imagens
+        
+        // --- ELEMENTOS DOM ---
+        const introVideoContainer = document.getElementById('intro-video-container');
+        const introVideo = document.getElementById('intro-video');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const progressFill = document.getElementById('progressFill');
+        const imageUpload = document.getElementById('imageUpload');
+        const uploadedImagesContainer = document.getElementById('uploadedImagesContainer');
+        const imageCountSpan = document.getElementById('imageCount');
+        const maxImagesSpan = document.getElementById('maxImages');
+        const limitWarning = document.getElementById('limitWarning');
+        const finishBtn = document.getElementById('finishBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const transitionOverlay = document.getElementById('transition-overlay');
+
+        // --- VARIÁVEIS DE ESTADO ---
+        let currentQuestionIndex = 0;
+        let isFinished = false;
+        let chatHistory = []; // Histórico completo para enviar ao backend
+        let userInfo = {}; // Informações do usuário
+        let userAnswers = {}; // Respostas às perguntas
+        let uploadedImages = []; // Imagens enviadas
+        let isTyping = false; // Flag para indicador de digitação
+        let videoStarted = false; // Flag para controlar se o vídeo começou a ser reproduzido
+        let transitionInitiated = false; // Flag para evitar múltiplas transições
+
+        // Atualiza o número máximo de imagens no texto
+        maxImagesSpan.textContent = MAX_IMAGES;
+
+        // --- PERGUNTAS PREDEFINIDAS ---
+        const questions = [
+            {
+                id: 'q1',
+                text: "Hi there! I'm Ralph, your real estate business analyzer. What's your name?",
+                key: 'userName',
+                type: 'text',
+                placeholder: 'Enter your name'
+            },
+            {
+                id: 'q2',
+                text: "Great to meet you, {userName}! What type of real estate business are you involved with?",
+                key: 'businessType',
+                type: 'choice',
+                options: [
+                    { label: 'Residential Sales', value: 'residential_sales' },
+                    { label: 'Commercial Real Estate', value: 'commercial_real_estate' },
+                    { label: 'Property Management', value: 'property_management' },
+                    { label: 'Real Estate Investment', value: 'real_estate_investment' },
+                    { label: 'Real Estate Development', value: 'real_estate_development' },
+                    { label: 'Other Real Estate Business', value: 'other_real_estate' }
+                ]
+            },
+            {
+                id: 'q3',
+                text: "Do you work independently or with a company?",
+                key: 'role',
+                type: 'choice',
+                options: [
+                    { label: 'Independent Agent/Broker', value: 'independent' },
+                    { label: 'Work with a Brokerage/Company', value: 'company' },
+                    { label: 'Business Owner/Entrepreneur', value: 'owner' },
+                    { label: 'Other Role', value: 'other_role' }
+                ]
+            },
+            {
+                id: 'q4',
+                text: "If you work with a company or have your own business, what's the name? (Optional)",
+                key: 'companyName',
+                type: 'text',
+                placeholder: 'Enter company name (or skip)',
+                optional: true
+            },
+            {
+                id: 'q5',
+                text: "What's your biggest challenge in your real estate business right now?",
+                key: 'challenge',
+                type: 'choice',
+                options: [
+                    { label: 'Finding new clients/leads', value: 'leads' },
+                    { label: 'Managing time effectively', value: 'time_management' },
+                    { label: 'Keeping up with paperwork/admin', value: 'paperwork' },
+                    { label: 'Marketing properties effectively', value: 'marketing' },
+                    { label: 'Closing deals/negotiations', value: 'closing' },
+                    { label: 'Technology/digital tools', value: 'technology' },
+                    { label: 'Other challenge', value: 'other_challenge' }
+                ]
+            },
+            {
+                id: 'q6',
+                text: "How much time do you spend weekly on administrative tasks (paperwork, emails, scheduling)?",
+                key: 'adminTime',
+                type: 'choice',
+                options: [
+                    { label: 'Less than 5 hours', value: 'under_5h' },
+                    { label: '5-10 hours', value: '5_10h' },
+                    { label: '10-20 hours', value: '10_20h' },
+                    { label: 'More than 20 hours', value: 'over_20h' },
+                    { label: 'Not sure', value: 'unknown' }
+                ]
+            },
+            {
+                id: 'q7',
+                text: "What's your approximate monthly budget for business tools and marketing?",
+                key: 'budget',
+                type: 'choice',
+                options: [
+                    { label: 'Under $100', value: 'under_100' },
+                    { label: '$100-$500', value: '100_500' },
+                    { label: '$500-$1000', value: '500_1000' },
+                    { label: 'Over $1000', value: 'over_1000' },
+                    { label: 'Prefer not to say', value: 'no_answer' }
+                ]
+            },
+            {
+                id: 'q8',
+                text: "What tools or software do you currently use in your business?",
+                key: 'tools',
+                type: 'choice',
+                options: [
+                    { label: 'CRM software', value: 'crm' },
+                    { label: 'MLS/property databases', value: 'mls' },
+                    { label: 'Social media management tools', value: 'social_media' },
+                    { label: 'Document/contract software', value: 'documents' },
+                    { label: 'Email marketing tools', value: 'email' },
+                    { label: 'Basic tools (email, spreadsheets)', value: 'basic' },
+                    { label: 'Other specialized tools', value: 'other_tools' }
+                ]
+            },
+            {
+                id: 'q9',
+                text: "What's your primary goal for the next 6 months in your business?",
+                key: 'goal',
+                type: 'choice',
+                options: [
+                    { label: 'Increase number of clients', value: 'more_clients' },
+                    { label: 'Improve profit margins', value: 'better_margins' },
+                    { label: 'Reduce working hours', value: 'less_hours' },
+                    { label: 'Expand to new market/area', value: 'expansion' },
+                    { label: 'Improve marketing/visibility', value: 'better_marketing' },
+                    { label: 'Streamline operations', value: 'streamline' },
+                    { label: 'Other goal', value: 'other_goal' }
+                ]
+            },
+            {
+                id: 'q10',
+                text: "Last question: If you could automate one aspect of your business, what would it be?",
+                key: 'automation',
+                type: 'choice',
+                options: [
+                    { label: 'Lead generation', value: 'lead_gen' },
+                    { label: 'Follow-up communications', value: 'follow_up' },
+                    { label: 'Document preparation', value: 'documents' },
+                    { label: 'Marketing/social media', value: 'marketing' },
+                    { label: 'Client relationship management', value: 'crm' },
+                    { label: 'Market analysis/research', value: 'research' },
+                    { label: 'Other process', value: 'other_process' }
+                ]
+            }
+        ];
+
+        // --- FUNÇÕES DE INTERFACE ---
+        
+        // Adiciona mensagem ao chat
+        function addMessage(sender, content, isHTML = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+
+            let messageContent = '';
+            if (sender === 'bot') {
+                messageContent = `
+                    <div class="avatar">R</div>
+                    <div class="message-content">${isHTML ? content : escapeHTML(content)}</div>
+                `;
+            } else {
+                messageContent = `
+                    <div class="message-content">${isHTML ? content : escapeHTML(content)}</div>
+                `;
+            }
+
+            messageDiv.innerHTML = messageContent;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Adiciona ao histórico para enviar ao backend
+            chatHistory.push({
+                sender: sender,
+                content: content
+            });
+        }
+
+        // Escapa HTML para prevenir XSS
+        function escapeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Mostra indicador de digitação
+        function showTyping() {
+            if (isTyping) return;
+            isTyping = true;
+
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('typing-indicator');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="avatar">R</div>
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
-            </div>
-        </div>
-
-        <div class="input-container">
-            <div class="warning" id="limitWarning" style="display: none;">
-                You've reached the limit of questions or images. Finish the analysis to receive your complete diagnosis!
-            </div>
-
-            <div class="file-upload">
-                <input type="file" id="imageUpload" accept="image/*" multiple>
-                <label for="imageUpload" class="file-upload-btn" type="button">
-                    📷 Upload Business Photos (<span id="imageCount">0</span>/5)
-                </label>
-                <div class="uploaded-images" id="uploadedImages"></div>
-            </div>
-
-            <div class="input-group">
-                <textarea class="input-field" id="userInput" placeholder="Type your answer here..." rows="1" disabled></textarea>
-                <button class="send-btn" id="sendBtn" disabled>➤</button>
-            </div>
-            <button class="finish-btn" id="finishBtn" disabled>Complete Analysis & Get Diagnosis</button>
-            <div class="status-message" id="statusMessage"></div>
-        </div>
-    </div>
-
-    <script>
-        // --- CONFIGURAÇÃO --- 
-        // IMPORTANTE: Substitua pela URL real do seu backend Render!
-        const BACKEND_URL = 'COLE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
-        const MAX_QUESTIONS = 10;
-        const MAX_IMAGES = 5;
-
-        // --- ELEMENTOS DOM --- 
-        const chatMessages = document.getElementById('chatMessages');
-        const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const finishBtn = document.getElementById('finishBtn');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const progressFill = document.getElementById('progressFill');
-        const imageUpload = document.getElementById('imageUpload');
-        const uploadedImagesContainer = document.getElementById('uploadedImages');
-        const imageCountSpan = document.getElementById('imageCount');
-        const limitWarning = document.getElementById('limitWarning');
-        const statusMessage = document.getElementById('statusMessage');
-        const introVideoContainer = document.getElementById('intro-video-container');
-        const introVideo = document.getElementById('intro-video');
-        const chatContainer = document.getElementById('chatContainer');
-
-<<<<<<< HEAD
-        // --- ESTADO DO CHAT --- 
-        let currentQuestionIndex = 0;
-        let chatHistory = [];
-        let uploadedImages = [];
-        let userAnswers = {}; // Armazena Q&A para envio final
-        let userInfo = {
-            userName: '',
-            businessType: '',
-            companyName: '',
-            businessName: '',
-            role: ''
-=======
-        // === CONFIGURAÇÃO ===
-        // Use uma URL relativa ou absoluta dependendo de onde o backend está rodando
-        // Se o HTML e o backend estiverem no mesmo servidor/domínio:
-        const BACKEND_URL = 'https://ralph-v68j.onrender.com//analyze'; 
-        // Se estiverem separados (ex: frontend no GitHub Pages, backend no Render):
-        // const BACKEND_URL = 'COLOQUE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
-        // ====================
-
-        // Estado da Aplicação
-        let conversationData = {
-            userName: '', companyName: '', businessName: '', businessType: '', role: '',
-            questions: [], images: [], questionCount: 0, maxQuestions: 15, maxImages: 5,
-            analysisComplete: false, currentStep: 'intro', chatHistory: [], // Inicia no 'intro'
-            uploadedFilesData: [] // Para armazenar nome e base64 das imagens
->>>>>>> c5b5da437fe4e4ae8da830fe2cf36dda016bbb07
-        };
-        let isWaitingForBot = false;
-        let isFinished = false;
-
-        // --- PERGUNTAS --- 
-        const questions = [
-            // Informações Iniciais
-            { id: 'name', text: "Hi! I'm Ralph, your AI business analyzer. To start, what's your name?", type: 'text', key: 'userName' },
-            { id: 'business_type', text: "Nice to meet you, {userName}! What type of real estate business are you primarily involved in?", type: 'choice', options: [
-                { value: 'real_estate_agency', label: '🏢 Real Estate Agency' },
-                { value: 'property_management', label: '🔑 Property Management' },
-                { value: 'real_estate_development', label: '🏗️ Real Estate Development' },
-                { value: 'real_estate_investment', label: '💰 Real Estate Investment (Flipping, REITs, etc.)' },
-                { value: 'mortgage_brokerage', label: '🏦 Mortgage Brokerage' },
-                { value: 'other', label: '✍️ Other (Please specify)' }
-            ], key: 'businessType' },
-            { id: 'company_name', text: "Got it. What's the name of your company (if applicable)?", type: 'text', optional: true, key: 'companyName' },
-            { id: 'business_name_q', text: "And what name does your business operate under (if different from the company name or if you're independent)?", type: 'text', optional: true, key: 'businessName' },
-            { id: 'role', text: "What is your current role within the business?", type: 'text', key: 'role' },
-
-            // Perguntas de Diagnóstico (Máximo de MAX_QUESTIONS - perguntas iniciais)
-            { id: 'q1', text: "What are the biggest challenges you face daily in your real estate activities?", type: 'text' },
-            { id: 'q2', text: "How do you currently manage client relationships and follow-ups? (e.g., CRM, spreadsheet, memory)", type: 'text' },
-            { id: 'q3', text: "Describe your process for generating new leads. What works best and what doesn't?", type: 'text' },
-            { id: 'q4', text: "Approximately how much time per week do you spend on administrative tasks (paperwork, scheduling, data entry)?", type: 'text' },
-            { id: 'q5', text: "What tools or software are essential to your business right now? Are there any you wish you had?", type: 'text' },
-            { id: 'q6', text: "How do you handle property showings and virtual tours? What challenges exist there?", type: 'text' },
-            { id: 'q7', text: "What are your main marketing strategies? How do you measure their success?", type: 'text' },
-            { id: 'q8', text: "Are there any specific areas where you feel costs could be reduced or efficiency improved?", type: 'text' },
-            { id: 'q9', text: "How do you stay updated with market trends and property valuations?", type: 'text' },
-            { id: 'q10', text: "What are your primary business goals for the next 6-12 months?", type: 'text' }
-        ];
-
-        // --- FUNÇÕES DO CHAT --- 
-
-        // Adiciona mensagem à UI e ao histórico
-        function addMessage(sender, content, isHtml = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender);
-
-            const avatarDiv = document.createElement('div');
-            avatarDiv.classList.add('avatar');
-            avatarDiv.textContent = sender === 'bot' ? '🤖' : '👤';
-
-            const contentDiv = document.createElement('div');
-            contentDiv.classList.add('message-content');
-            if (isHtml) {
-                contentDiv.innerHTML = content; // Renderiza HTML diretamente
-            } else {
-                contentDiv.textContent = content;
-            }
-
-            if (sender === 'bot') {
-                messageDiv.appendChild(avatarDiv);
-                messageDiv.appendChild(contentDiv);
-            } else {
-                messageDiv.appendChild(contentDiv);
-                // Não adiciona avatar para user para economizar espaço
-            }
-
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll
-
-            // Adiciona ao histórico (simplificado para envio)
-            chatHistory.push({ sender, content });
-        }
-
-        // Mostra indicador de digitação
-        function showTyping() {
-            typingIndicator.style.display = 'flex';
+            `;
+            chatMessages.appendChild(typingDiv);
+            typingDiv.style.display = 'flex';
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // Esconde indicador de digitação
         function hideTyping() {
-            typingIndicator.style.display = 'none';
+            isTyping = false;
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) {
+                typingDiv.remove();
+            }
         }
 
-        // Atualiza barra de progresso
+        // Atualiza a barra de progresso
         function updateProgress() {
-            const totalSteps = questions.length;
-            const progress = (currentQuestionIndex / totalSteps) * 100;
+            const progress = (currentQuestionIndex / questions.length) * 100;
             progressFill.style.width = `${progress}%`;
         }
 
-        // Processa a resposta do usuário
+        // --- FUNÇÕES DE INTERAÇÃO ---
+        
+        // Processa input do usuário
         function handleUserInput() {
-            if (isWaitingForBot || isFinished) return;
+            const text = userInput.value.trim();
+            if (!text || isFinished) return;
 
-            const answer = userInput.value.trim();
-            if (!answer && questions[currentQuestionIndex].type === 'text' && !questions[currentQuestionIndex].optional) {
-                // Poderia adicionar validação visual aqui se necessário
-                return;
-            }
-
-            addMessage('user', answer);
+            addMessage('user', text);
             userInput.value = '';
-            userInput.disabled = true;
-            sendBtn.disabled = true;
+            
+            // Ajusta altura do textarea
+            userInput.style.height = 'auto';
 
-            // Armazena a resposta
+            // Processa resposta para a pergunta atual
             const currentQuestion = questions[currentQuestionIndex];
             if (currentQuestion.key) {
-                userInfo[currentQuestion.key] = answer;
+                userInfo[currentQuestion.key] = text;
             }
+            
             // Armazena Q&A para o prompt da IA
-            userAnswers[currentQuestion.id] = { question: currentQuestion.text.replace('{userName}', userInfo.userName), answer: answer };
+            userAnswers[currentQuestion.id] = { 
+                question: currentQuestion.text.replace('{userName}', userInfo.userName), 
+                answer: text 
+            };
 
             currentQuestionIndex++;
             updateProgress();
 
+            // Mostra próxima pergunta ou finaliza
             if (currentQuestionIndex < questions.length) {
                 askNextQuestion();
             } else {
@@ -731,74 +860,68 @@
 
         // Faz a próxima pergunta
         function askNextQuestion() {
-            if (currentQuestionIndex >= questions.length || isFinished) {
-                finishConversation();
-                return;
+            const currentQuestion = questions[currentQuestionIndex];
+            let questionText = currentQuestion.text;
+            
+            // Substitui placeholders
+            if (userInfo.userName && questionText.includes('{userName}')) {
+                questionText = questionText.replace('{userName}', userInfo.userName);
             }
 
-            isWaitingForBot = true;
             showTyping();
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-            removeChoiceButtons(); // Remove botões de escolha anteriores
-
-            const question = questions[currentQuestionIndex];
-            let questionText = question.text.replace('{userName}', userInfo.userName || 'there');
-
+            
             setTimeout(() => {
                 hideTyping();
-                addMessage('bot', questionText, question.type !== 'text'); // Renderiza HTML se não for texto puro
-
-                if (question.type === 'choice') {
-                    createChoiceButtons(question.options);
-                    userInput.style.display = 'none'; // Esconde input de texto para escolhas
-                    sendBtn.style.display = 'none';
+                
+                // Adiciona a pergunta como mensagem do bot
+                addMessage('bot', questionText);
+                
+                // Se for pergunta de escolha, mostra botões
+                if (currentQuestion.type === 'choice') {
+                    showChoiceButtons(currentQuestion.options);
+                    userInput.disabled = true;
+                    sendBtn.disabled = true;
                 } else {
-                    userInput.style.display = 'block';
-                    sendBtn.style.display = 'flex';
                     userInput.disabled = false;
                     sendBtn.disabled = false;
+                    userInput.placeholder = currentQuestion.placeholder || 'Type your answer...';
                     userInput.focus();
                 }
-                isWaitingForBot = false;
-                checkLimits(); // Verifica limites após fazer a pergunta
-            }, 1000 + Math.random() * 500); // Simula tempo de digitação
+                
+                checkLimits();
+            }, 1000);
         }
 
-        // Cria botões de múltipla escolha
-        function createChoiceButtons(options) {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.classList.add('business-type-selector'); // Reusa a classe para estilização
-            buttonContainer.id = 'choiceButtonContainer'; // ID para remoção fácil
-
+        // Mostra botões de escolha
+        function showChoiceButtons(options) {
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.classList.add('business-type-selector');
+            buttonsDiv.id = 'choiceButtons';
+            
             options.forEach(option => {
                 const button = document.createElement('button');
-                button.classList.add('business-type-btn'); // Reusa a classe
+                button.classList.add('business-type-btn');
                 button.textContent = option.label;
                 button.onclick = () => handleChoiceSelection(option.value);
-                buttonContainer.appendChild(button);
+                buttonsDiv.appendChild(button);
             });
-
-            // Adiciona container de botões abaixo da última mensagem do bot
-            const lastBotMessage = chatMessages.querySelector('.message.bot:last-child .message-content');
-            if (lastBotMessage) {
-                lastBotMessage.appendChild(buttonContainer);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            
+            chatMessages.appendChild(buttonsDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Remove botões de escolha anteriores
+        // Remove botões de escolha
         function removeChoiceButtons() {
-            const existingContainer = document.getElementById('choiceButtonContainer');
-            if (existingContainer) {
-                existingContainer.remove();
+            const buttonsDiv = document.getElementById('choiceButtons');
+            if (buttonsDiv) {
+                buttonsDiv.remove();
             }
+            userInput.disabled = false;
+            sendBtn.disabled = false;
         }
 
-        // Processa a seleção de um botão de escolha
+        // Processa seleção de escolha
         function handleChoiceSelection(value) {
-            if (isWaitingForBot || isFinished) return;
-
             const selectedOption = questions[currentQuestionIndex].options.find(opt => opt.value === value);
             addMessage('user', selectedOption.label); // Mostra a label selecionada como resposta do user
             removeChoiceButtons();
@@ -986,34 +1109,81 @@
             imageCountSpan.textContent = uploadedImages.length;
         }
 
-        // --- INICIALIZAÇÃO --- 
+        // --- INICIALIZAÇÃO COM ANIMAÇÃO APRIMORADA --- 
         function startChat() {
-            // Esconde vídeo e mostra chat após transição
-            introVideoContainer.classList.add('hidden');
+            // Evita múltiplas chamadas à função
+            if (transitionInitiated) return;
+            transitionInitiated = true;
+            
+            console.log("Iniciando transição para o chat");
+            
+            // Ativa o overlay de transição
+            transitionOverlay.classList.add('active');
+            
+            // Após um breve momento, inicia a transição do vídeo
             setTimeout(() => {
-                introVideoContainer.style.display = 'none'; // Remove da renderização
-                chatContainer.classList.add('visible');
-                document.body.style.overflow = 'auto'; // Permite scroll no body se necessário
-                // Inicia a conversa
-                askNextQuestion();
-            }, 1000); // Tempo igual à transição de opacidade
+                introVideoContainer.classList.add('hidden');
+                
+                // Após a transição do vídeo, desativa o overlay e mostra o chat
+                setTimeout(() => {
+                    transitionOverlay.classList.remove('active');
+                    introVideoContainer.style.display = 'none'; // Remove da renderização
+                    chatContainer.classList.add('visible');
+                    document.body.style.overflow = 'auto'; // Permite scroll no body se necessário
+                    
+                    // Inicia a conversa com animação de entrada
+                    setTimeout(() => {
+                        askNextQuestion();
+                    }, 500); // Pequeno atraso para melhor efeito visual
+                }, 1500); // Tempo igual à transição de opacidade
+            }, 300); // Breve atraso para ativar o overlay
         }
 
+        // Monitora o carregamento do vídeo
+        introVideo.addEventListener('loadeddata', () => {
+            console.log("Vídeo carregado");
+            videoStarted = true;
+        });
+
         // Event listener para o fim do vídeo
-        introVideo.addEventListener('ended', startChat);
+        introVideo.addEventListener('ended', () => {
+            console.log("Vídeo terminou");
+            startChat();
+        });
+
+        // Event listener para erros no vídeo
+        introVideo.addEventListener('error', (e) => {
+            console.error("Erro no vídeo:", e);
+            startChat();
+        });
 
         // Fallback: Se o vídeo não tocar ou falhar, inicia o chat após um tempo
-        const fallbackTimeout = setTimeout(startChat, 7000); // Ajuste o tempo se necessário
-        introVideo.addEventListener('play', () => clearTimeout(fallbackTimeout));
-        introVideo.addEventListener('error', startChat); // Inicia se houver erro no vídeo
+        const fallbackTimeout = setTimeout(() => {
+            console.log("Fallback timeout acionado");
+            startChat();
+        }, 7000);
+
+        // Limpa o timeout se o vídeo começar a tocar
+        introVideo.addEventListener('play', () => {
+            console.log("Vídeo começou a tocar");
+            videoStarted = true;
+            clearTimeout(fallbackTimeout);
+        });
 
         // Tenta dar play no vídeo (necessário para autoplay em alguns navegadores)
         introVideo.play().catch(error => {
             console.warn("Autoplay foi bloqueado, iniciando chat diretamente ou esperando interação.", error);
             // Se o autoplay falhar, pode ser necessário um clique do usuário.
             // Neste caso, o 'ended' não será disparado, então o fallback ou 'error' cuidará disso.
-            // Poderíamos adicionar um botão "Start" se o autoplay falhar consistentemente.
         });
+
+        // Fallback adicional: Se o vídeo estiver carregado mas não iniciar em 2 segundos
+        setTimeout(() => {
+            if (videoStarted && introVideo.paused) {
+                console.log("Vídeo carregado mas não iniciou, forçando transição");
+                startChat();
+            }
+        }, 2000);
 
         // Event listeners para input e botões
         userInput.addEventListener('keypress', (e) => {
@@ -1025,7 +1195,13 @@
         sendBtn.addEventListener('click', handleUserInput);
         finishBtn.addEventListener('click', getDiagnosis);
 
+        // Adiciona um listener de clique no container do vídeo para iniciar a transição
+        // Isso ajuda em dispositivos móveis onde o autoplay pode ser bloqueado
+        introVideoContainer.addEventListener('click', () => {
+            console.log("Container do vídeo clicado");
+            startChat();
+        });
+
     </script>
 </body>
 </html>
-
