@@ -94,6 +94,7 @@ def generate_ai_enhanced_diagnosis(data):
     """
 
     try:
+<<<<<<< HEAD
         print("\n--- Sending request to Cohere ---")
         # Generate content using Cohere's generate endpoint
         response = cohere_client.generate(
@@ -105,6 +106,18 @@ def generate_ai_enhanced_diagnosis(data):
             p=0.75,
             stop_sequences=[],
             return_likelihoods='NONE'
+=======
+        print("\n--- Sending request to OpenAI ---")
+        # print(f"Prompt: {prompt[:500]}...") # Log prompt start for debugging
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo", # Or use "gpt-4" if available/preferred
+            messages=[
+                {"role": "system", "content": "You are an expert business analyst specializing in the real estate sector. Generate concise, actionable HTML reports based on user inputs."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5, # Slightly creative but mostly factual
+            max_tokens=4000 # Adjust token limit as needed
+>>>>>>> c5b5da437fe4e4ae8da830fe2cf36dda016bbb07
         )
         print("--- Cohere response received ---")
 

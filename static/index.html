@@ -583,6 +583,7 @@
         const introVideo = document.getElementById('intro-video');
         const chatContainer = document.getElementById('chatContainer');
 
+<<<<<<< HEAD
         // --- ESTADO DO CHAT --- 
         let currentQuestionIndex = 0;
         let chatHistory = [];
@@ -594,6 +595,22 @@
             companyName: '',
             businessName: '',
             role: ''
+=======
+        // === CONFIGURAÇÃO ===
+        // Use uma URL relativa ou absoluta dependendo de onde o backend está rodando
+        // Se o HTML e o backend estiverem no mesmo servidor/domínio:
+        const BACKEND_URL = 'https://ralph-v68j.onrender.com//analyze'; 
+        // Se estiverem separados (ex: frontend no GitHub Pages, backend no Render):
+        // const BACKEND_URL = 'COLOQUE_A_URL_DO_SEU_BACKEND_RENDER_AQUI/analyze';
+        // ====================
+
+        // Estado da Aplicação
+        let conversationData = {
+            userName: '', companyName: '', businessName: '', businessType: '', role: '',
+            questions: [], images: [], questionCount: 0, maxQuestions: 15, maxImages: 5,
+            analysisComplete: false, currentStep: 'intro', chatHistory: [], // Inicia no 'intro'
+            uploadedFilesData: [] // Para armazenar nome e base64 das imagens
+>>>>>>> c5b5da437fe4e4ae8da830fe2cf36dda016bbb07
         };
         let isWaitingForBot = false;
         let isFinished = false;
