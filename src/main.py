@@ -32,23 +32,23 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com") # Email padrão do usuário
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # Chave da API DeepSeek
+OPENAI_API_KEY = "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" # TODO: Use environment variable for security
 # -------------------------------------------
 
-# --- Configuração Global do Cliente OpenAI para DeepSeek (v1+ SDK) ---
+# --- Configuração Global do Cliente OpenAI para ChatGPT (v1+ SDK) ---
 client = None
-if DEEPSEEK_API_KEY:
+if OPENAI_API_KEY:
     try:
         client = OpenAI(
-            api_key=DEEPSEEK_API_KEY,
-            base_url="https://api.deepseek.com"
+            api_key=OPENAI_API_KEY
+            # base_url é omitido para usar o padrão da OpenAI
         )
-        print("Cliente DeepSeek (via OpenAI SDK v1+) configurado com sucesso.")
+        print("Cliente OpenAI (ChatGPT) configurado com sucesso.")
     except Exception as e:
-        print(f"Erro ao configurar cliente DeepSeek: {e}")
+        print(f"Erro ao configurar cliente OpenAI: {e}")
         client = None
 else:
-    print("Aviso: Variável de ambiente DEEPSEEK_API_KEY não definida. Análise da IA será pulada.")
+    print("Aviso: Variável OPENAI_API_KEY não definida ou inválida. Análise da IA será pulada.")
 # ---------------------------------------------------------------------
 
 def format_conversation_to_text(chat_history, user_name="User", profile="unknown"):
@@ -93,10 +93,10 @@ def save_conversation_to_file(conversation_text):
         print(f"Erro ao salvar arquivo de conversa: {e}")
         return None
 
-def generate_deepseek_analysis(conversation_text, profile):
-    """Gera análise usando DeepSeek com base no texto da conversa."""
+def generate_chatgpt_analysis(conversation_text, profile):
+    """Gera análise usando ChatGPT com base no texto da conversa."""
     if not client:
-        return "AI analysis could not be performed. DeepSeek API configuration missing or failed."
+        return "AI analysis could not be performed. OpenAI API configuration missing or failed."
 
     # Prompt melhorado baseado no perfil
     profile_context = {
@@ -124,10 +124,10 @@ Conversation Data:
 Analysis:"""
 
     try:
-        print("\n--- Enviando requisição para DeepSeek ---")
+        print("\n--- Enviando requisição para OpenAI API ---")
         
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model="gpt-3.5-turbo", # Modelo OpenAI
             messages=[
                 {
                     "role": "system", 
@@ -142,7 +142,7 @@ Analysis:"""
             temperature=0.7,
         )
         
-        print("--- Resposta do DeepSeek recebida ---")
+        print("--- Resposta da OpenAI API recebida ---")
         
         ai_analysis_text = response.choices[0].message.content.strip()
         
@@ -155,7 +155,7 @@ Analysis:"""
         return ai_analysis_text
 
     except Exception as e:
-        print(f"Erro ao chamar API DeepSeek: {e}")
+        print(f"Erro ao chamar API OpenAI: {e}")
         error_msg = f"Error generating AI analysis: {str(e)}"
         return error_msg
 
@@ -259,13 +259,13 @@ def analyze_data():
         conversation_filepath = save_conversation_to_file(conversation_text)
         print(f"DEBUG: Arquivo salvo em: {conversation_filepath}")
 
-        # --- Gerar Análise IA (DeepSeek) --- 
+        # --- Gerar Análise IA (ChatGPT) --- 
         print("DEBUG: Iniciando análise IA...")
         if not client:
-            ai_analysis_text = "AI analysis unavailable - DeepSeek API not configured properly."
-            print("WARN: Cliente DeepSeek não configurado")
+            ai_analysis_text = "AI analysis unavailable - OpenAI API not configured properly."
+            print("WARN: Cliente OpenAI não configurado")
         else:
-            ai_analysis_text = generate_deepseek_analysis(conversation_text, profile)
+            ai_analysis_text = generate_chatgpt_analysis(conversation_text, profile)
             print(f"DEBUG: Análise gerada ({len(ai_analysis_text)} caracteres)")
 
         # Verificar se a análise foi gerada
