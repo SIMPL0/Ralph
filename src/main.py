@@ -190,10 +190,18 @@ def analyze_data():
 
         # --- Gerar Análise IA (DeepSeek) --- 
         ai_analysis_text = "Analysis skipped (file saving failed)." # Mensagem padrão
+        print("DEBUG: Verificando se o arquivo de conversa foi salvo...") # Log 1
         if conversation_filepath:
+             print("DEBUG: Arquivo salvo. Chamando generate_deepseek_analysis...") # Log 2
              ai_analysis_text = generate_deepseek_analysis(conversation_text)
+             print(f"DEBUG: Resultado de generate_deepseek_analysis: {str(ai_analysis_text)[:200]}...") # Log 3
         else:
              print("Pulando análise da IA porque o arquivo de conversa não pôde ser salvo.")
+        
+        # Garante que ai_analysis_text nunca seja None ou vazio para jsonify
+        if not ai_analysis_text:
+            print("WARN: ai_analysis_text estava vazio ou None. Definindo para mensagem padrão.")
+            ai_analysis_text = "Analysis result was empty or could not be generated."
         # -----------------------------------
 
         # --- Preparar e Enviar Email --- 
@@ -205,7 +213,9 @@ def analyze_data():
 
         # --- Retornar Análise para Frontend --- 
         # Retorna o texto plano da análise
-        return jsonify({"analysis_text": ai_analysis_text})
+        response_data = {"analysis_text": ai_analysis_text}
+        print(f"DEBUG: Preparando para retornar JSON: {json.dumps(response_data)}") # Log 4
+        return jsonify(response_data)
         # ---------------------------------------
 
     except Exception as e:
