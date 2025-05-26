@@ -11,7 +11,19 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication # Para anexar arquivos
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-app = Flask(__name__, static_folder='static')
+
+# --- Determinar Caminhos Absolutos ---
+# Diretório onde main.py está localizado (src)
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# Diretório raiz do projeto (um nível acima de src)
+PROJECT_ROOT = os.path.dirname(APP_DIR)
+# Caminho absoluto para a pasta static
+STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'static')
+print(f"DEBUG: Project Root: {PROJECT_ROOT}")
+print(f"DEBUG: Static Folder Path: {STATIC_FOLDER_PATH}")
+# -------------------------------------
+
+app = Flask(__name__, static_folder=STATIC_FOLDER_PATH)
 CORS(app) # Permite requisições do frontend
 
 # --- Configuração de Variáveis de Ambiente ---
@@ -163,18 +175,32 @@ def send_email_notification(subject, text_body, attachment_path=None):
 
 @app.route('/')
 def index():
+    print(f"DEBUG: Servindo index.html de {app.static_folder}")
+    # Usa app.static_folder que agora contém o caminho absoluto
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/<path:path>')
 def static_files(path):
-    return send_from_directory(app.static_folder, path)
+    # Esta rota agora serve apenas arquivos da pasta static que são pedidos explicitamente
+    # Ex: /intro_animation_logo.png
+    # Não deve mais servir index.html ou causar conflito com /analyze
+    print(f"DEBUG: Tentando servir arquivo estático '{path}' de {app.static_folder}")
+    # Verifica se o arquivo existe para evitar erros
+    file_path = os.path.join(app.static_folder, path)
+    if os.path.isfile(file_path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        print(f"WARN: Arquivo estático não encontrado: {file_path}")
+        return jsonify({"error": "Static file not found"}), 404
 
 @app.route("/analyze", methods=["POST"])
 def analyze_data():
     """Recebe dados, salva conversa, gera análise IA (DeepSeek), envia email, retorna análise."""
+    print("DEBUG: Rota /analyze acessada.") # Log 0
     try:
         data = request.json
         if not data:
+            print("WARN: Nenhum dado JSON recebido em /analyze")
             return jsonify({"error": "Nenhum dado recebido"}), 400
 
         log_data = {k: v for k, v in data.items() if k != 'images'} # Não loga imagens base64
@@ -219,25 +245,17 @@ def analyze_data():
         # ---------------------------------------
 
     except Exception as e:
-        print(f"Erro no endpoint /analyze: {e}")
-        # Fornece uma mensagem de erro genérica para o frontend
-        return jsonify({"analysis_text": f"An unexpected error occurred processing your request. Please try again later. Error: {html.escape(str(e))}"}), 500
+        print(f"Erro CRÍTICO no endpoint /analyze: {e}", exc_info=True) # Log detalhado da exceção
+        # Fornece uma mensagem de erro genérica para o frontend, mas loga o detalhe
+        error_message_for_user = f"An unexpected error occurred processing your request. Please try again later. Error ID: {uuid.uuid4()}"
+        return jsonify({"analysis_text": error_message_for_user}), 500
 
 if __name__ == "__main__":
     # Esta parte é principalmente para teste local, Render usa o comando gunicorn
+    # O host 0.0.0.0 e a porta via variável de ambiente são corretos para Render
+    print("Iniciando Flask app para teste local...")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
-
-
-
-@app.route('/', methods=['POST'])
-def handle_root_post():
-    print("\n--- WARNING: POST request received at root ('/') ---")
-    try:
-        data = request.get_data(as_text=True)
-        print(f"Request Headers: {request.headers}")
-        print(f"Request Body: {data[:500]}... (truncated)") # Log first 500 chars
-    except Exception as e:
-        print(f"Error logging root POST request: {e}")
-    return jsonify({"error": "Endpoint not found. Use /analyze for analysis."}), 404
+# Removido o handler POST para '/', pois não é necessário e pode causar confusão.
+# A rota genérica /<path:path> agora trata de servir arquivos estáticos.
 
