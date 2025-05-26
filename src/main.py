@@ -5,7 +5,7 @@ import random
 import re
 import html
 import uuid # Para nomes de arquivo únicos
-import openai # Importa OpenAI globalmente
+from openai import OpenAI # Importa OpenAI corretamente para SDK v1+
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication # Para anexar arquivos
@@ -36,140 +36,174 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # Chave da API DeepSeek
 # -------------------------------------------
 
 # --- Configuração Global do Cliente OpenAI para DeepSeek (v1+ SDK) ---
-openai_configured = False
+client = None
 if DEEPSEEK_API_KEY:
     try:
-        openai.api_key = DEEPSEEK_API_KEY
-        openai.base_url = "https://api.deepseek.com/v1" # URL base da API DeepSeek
+        client = OpenAI(
+            api_key=DEEPSEEK_API_KEY,
+            base_url="https://api.deepseek.com"
+        )
         print("Cliente DeepSeek (via OpenAI SDK v1+) configurado com sucesso.")
-        openai_configured = True
     except Exception as e:
-        print(f"Erro ao configurar cliente DeepSeek globalmente: {e}")
-        # Não definimos openai = None, apenas controlamos com a flag
+        print(f"Erro ao configurar cliente DeepSeek: {e}")
+        client = None
 else:
     print("Aviso: Variável de ambiente DEEPSEEK_API_KEY não definida. Análise da IA será pulada.")
 # ---------------------------------------------------------------------
 
-def format_conversation_to_text(chat_history, user_name="User"):
+def format_conversation_to_text(chat_history, user_name="User", profile="unknown"):
     """Formata o histórico do chat em uma string de texto simples."""
-    text_log = f"Conversation Log for {user_name}:\n" + "="*30 + "\n\n"
-    for msg in chat_history:
+    text_log = f"Real Estate Business Analysis for {user_name}\n"
+    text_log += f"Profile: {profile.title()}\n"
+    text_log += "="*50 + "\n\n"
+    
+    for i, msg in enumerate(chat_history):
         sender = msg.get("sender")
         content = msg.get("content", "(empty)")
-        # Remove HTML simples que pode vir do frontend (ex: indicador de digitação)
+        # Remove HTML simples que pode vir do frontend
         clean_content = re.sub("<.*?>", "", content).strip()
-        if not clean_content:
-            continue # Pula mensagens vazias ou apenas com HTML
+        if not clean_content or "To start, please tell me" in clean_content:
+            continue # Pula mensagens vazias ou de seleção de perfil
 
         if sender == "bot":
-            text_log += f"Ralph (Bot): {clean_content}\n"
+            text_log += f"Ralph (AI): {clean_content}\n\n"
         elif sender == "user":
-            text_log += f"{user_name}: {clean_content}\n"
-        text_log += "---\n"
+            text_log += f"{user_name}: {clean_content}\n\n"
+        
+        text_log += "-" * 30 + "\n\n"
+    
     return text_log
 
 def save_conversation_to_file(conversation_text):
     """Salva a string da conversa em um arquivo TXT temporário."""
     try:
-        # Cria um diretório temporário se não existir
-        temp_dir = "/tmp/ralph_conversations"
-        os.makedirs(temp_dir, exist_ok=True)
-
-        filename = f"conversation_{uuid.uuid4()}.txt"
+        # Usa diretório temporário do sistema
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        
+        filename = f"ralph_conversation_{uuid.uuid4().hex[:8]}.txt"
         filepath = os.path.join(temp_dir, filename)
+        
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(conversation_text)
+        
         print(f"Conversa salva em: {filepath}")
         return filepath
     except Exception as e:
         print(f"Erro ao salvar arquivo de conversa: {e}")
         return None
 
-def generate_deepseek_analysis(conversation_text):
-    """Gera análise usando DeepSeek com base no texto da conversa (usando SDK v1+)."""
-    if not openai_configured:
-        return "AI analysis could not be performed. Configuration missing or failed."
+def generate_deepseek_analysis(conversation_text, profile):
+    """Gera análise usando DeepSeek com base no texto da conversa."""
+    if not client:
+        return "AI analysis could not be performed. DeepSeek API configuration missing or failed."
 
-    # Novo prompt conforme solicitado pelo usuário
-    prompt = f"""(Based on the user responses in the following conversation log, what mistakes are they making, what could they improve, and subtly present a solution for some of their business problems? Within this solution, subtly introduce AI automations (without naming any specific AI tools) and explain how they would be beneficial for their business. Respond in English and with a maximum of 1000 characters.)
+    # Prompt melhorado baseado no perfil
+    profile_context = {
+        'individual': 'independent real estate agent',
+        'employee': 'real estate company employee',
+        'owner': 'real estate business owner'
+    }
+    
+    context = profile_context.get(profile, 'real estate professional')
+    
+    prompt = f"""You are Ralph, an AI business analyst specializing in real estate. Based on the conversation below with a {context}, provide a comprehensive business analysis.
 
-Conversation Log:
-```txt
+Your analysis should include:
+1. Current business strengths and weaknesses identified
+2. Key areas for improvement
+3. Specific actionable recommendations
+4. How AI automation could solve their biggest pain points (without naming specific tools)
+5. Potential ROI and efficiency gains from implementing your suggestions
+
+Keep the tone professional yet conversational, as if you're their personal business consultant. Limit response to 800 words maximum.
+
+Conversation Data:
 {conversation_text}
-```
-"""
+
+Analysis:"""
 
     try:
-        print("\n--- Enviando requisição para DeepSeek (SDK v1+) ---")
-        # Usa a chamada atualizada para SDK v1+
-        response = openai.chat.completions.create(
-            model="deepseek-chat", # Modelo de chat padrão do DeepSeek
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=350,  # Aproximação para ~1000 caracteres (ajustar se necessário)
+        print("\n--- Enviando requisição para DeepSeek ---")
+        
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are Ralph, an expert AI business analyst for real estate professionals. Provide actionable, specific advice based on the conversation data."
+                },
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
+            ],
+            max_tokens=1000,
             temperature=0.7,
         )
-        print("--- Resposta do DeepSeek recebida (SDK v1+) ---")
-
+        
+        print("--- Resposta do DeepSeek recebida ---")
+        
         ai_analysis_text = response.choices[0].message.content.strip()
-
-        # Garante que não exceda muito o limite (corte simples)
-        if len(ai_analysis_text) > 1100: # Uma margem pequena
-             ai_analysis_text = ai_analysis_text[:1000] + "... (truncated)"
-
+        
+        if not ai_analysis_text:
+            return "Analysis could not be generated. Please try again."
+            
+        # Adiciona assinatura do Ralph
+        ai_analysis_text += "\n\n---\nAnalysis generated by Ralph AI\nReal Estate Business Consultant"
+        
         return ai_analysis_text
 
     except Exception as e:
-        print(f"Erro ao chamar API DeepSeek (SDK v1+): {e}", exc_info=True) # Log detalhado
-        return f"An error occurred during the AI analysis generation using DeepSeek. Error details: {html.escape(str(e))}"
+        print(f"Erro ao chamar API DeepSeek: {e}")
+        error_msg = f"Error generating AI analysis: {str(e)}"
+        return error_msg
 
 def send_email_notification(subject, text_body, attachment_path=None):
     """Envia um email com anexo opcional."""
-    if not all([EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, SMTP_SERVER]):
+    if not all([EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
         print("Configuração de email incompleta. Pulando notificação por email.")
         return False
 
-    message = MIMEMultipart()
-    message["From"] = EMAIL_SENDER
-    message["To"] = EMAIL_RECEIVER
-    message["Subject"] = subject
+    try:
+        message = MIMEMultipart()
+        message["From"] = EMAIL_SENDER
+        message["To"] = EMAIL_RECEIVER
+        message["Subject"] = subject
 
-    # Anexa o corpo do texto
-    message.attach(MIMEText(text_body, "plain", "utf-8"))
+        # Anexa o corpo do texto
+        message.attach(MIMEText(text_body, "plain", "utf-8"))
 
-    # Anexa o arquivo TXT, se fornecido
-    if attachment_path and os.path.exists(attachment_path):
-        try:
+        # Anexa o arquivo TXT, se fornecido
+        if attachment_path and os.path.exists(attachment_path):
             with open(attachment_path, "rb") as attachment:
                 part = MIMEApplication(attachment.read(), Name=os.path.basename(attachment_path))
             part["Content-Disposition"] = f"attachment; filename=\"{os.path.basename(attachment_path)}\""
             message.attach(part)
             print(f"Anexo {os.path.basename(attachment_path)} adicionado ao email.")
-        except Exception as e:
-            print(f"Erro ao anexar arquivo {attachment_path}: {e}")
 
-    try:
         print(f"Conectando ao servidor SMTP: {SMTP_SERVER}:{SMTP_PORT}")
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.ehlo()
         server.starttls()
         server.ehlo()
-        print("Logando na conta de email...")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        print("Enviando email...")
+        
         server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, message.as_string())
         server.quit()
+        
         print(f"Email enviado com sucesso para {EMAIL_RECEIVER}")
-        # Tenta remover o arquivo temporário após o envio
+        
+        # Remove arquivo temporário
         if attachment_path and os.path.exists(attachment_path):
-             try:
-                 os.remove(attachment_path)
-                 print(f"Arquivo temporário {attachment_path} removido.")
-             except Exception as e:
-                 print(f"Erro ao remover arquivo temporário {attachment_path}: {e}")
+            try:
+                os.remove(attachment_path)
+                print(f"Arquivo temporário removido: {attachment_path}")
+            except Exception as e:
+                print(f"Erro ao remover arquivo temporário: {e}")
+                
         return True
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"Erro de Autenticação SMTP: {e}. Verifique email/senha (Senha de App?).")
-        return False
+        
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
         return False
@@ -177,16 +211,11 @@ def send_email_notification(subject, text_body, attachment_path=None):
 @app.route("/")
 def index():
     print(f"DEBUG: Servindo index.html de {app.static_folder}")
-    # Usa app.static_folder que agora contém o caminho absoluto
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route("/<path:path>")
 def static_files(path):
-    # Esta rota agora serve apenas arquivos da pasta static que são pedidos explicitamente
-    # Ex: /intro_animation_logo.png
-    # Não deve mais servir index.html ou causar conflito com /analyze
-    print(f"DEBUG: Tentando servir arquivo estático '{path}' de {app.static_folder}")
-    # Verifica se o arquivo existe para evitar erros
+    print(f"DEBUG: Servindo arquivo estático '{path}' de {app.static_folder}")
     file_path = os.path.join(app.static_folder, path)
     if os.path.isfile(file_path):
         return send_from_directory(app.static_folder, path)
@@ -197,66 +226,92 @@ def static_files(path):
 @app.route("/analyze", methods=["POST"])
 def analyze_data():
     """Recebe dados, salva conversa, gera análise IA (DeepSeek), envia email, retorna análise."""
-    print("DEBUG: Rota /analyze acessada.") # Log 0
+    print("=== DEBUG: Iniciando processo de análise ===")
+    
     try:
-        data = request.json
+        # Verificar se recebeu dados JSON
+        if not request.is_json:
+            print("ERROR: Request não é JSON")
+            return jsonify({"error": "Request must be JSON"}), 400
+            
+        data = request.get_json()
         if not data:
-            print("WARN: Nenhum dado JSON recebido em /analyze")
-            return jsonify({"error": "Nenhum dado recebido"}), 400
+            print("ERROR: Nenhum dado JSON recebido")
+            return jsonify({"error": "No data received"}), 400
 
-        log_data = {k: v for k, v in data.items() if k != 'images'} # Não loga imagens base64
-        print("Dados recebidos para análise (sem imagens):", json.dumps(log_data, indent=2))
+        print(f"DEBUG: Dados recebidos: {list(data.keys())}")
 
         user_name = data.get("userName", "User")
+        profile = data.get("profile", "unknown")
         chat_history = data.get("chatHistory", [])
 
+        print(f"DEBUG: user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
+
+        if not chat_history:
+            print("ERROR: Histórico de chat vazio")
+            return jsonify({"error": "Chat history is empty"}), 400
+
         # --- Formatar e Salvar Conversa --- 
-        conversation_text = format_conversation_to_text(chat_history, user_name)
+        print("DEBUG: Formatando conversa...")
+        conversation_text = format_conversation_to_text(chat_history, user_name, profile)
+        print(f"DEBUG: Texto da conversa criado ({len(conversation_text)} caracteres)")
+        
         conversation_filepath = save_conversation_to_file(conversation_text)
-        # -----------------------------------
+        print(f"DEBUG: Arquivo salvo em: {conversation_filepath}")
 
         # --- Gerar Análise IA (DeepSeek) --- 
-        ai_analysis_text = "Analysis skipped (file saving failed)." # Mensagem padrão
-        print("DEBUG: Verificando se o arquivo de conversa foi salvo...") # Log 1
-        if conversation_filepath:
-             print("DEBUG: Arquivo salvo. Chamando generate_deepseek_analysis...") # Log 2
-             ai_analysis_text = generate_deepseek_analysis(conversation_text)
-             print(f"DEBUG: Resultado de generate_deepseek_analysis: {str(ai_analysis_text)[:200]}...") # Log 3
+        print("DEBUG: Iniciando análise IA...")
+        if not client:
+            ai_analysis_text = "AI analysis unavailable - DeepSeek API not configured properly."
+            print("WARN: Cliente DeepSeek não configurado")
         else:
-             print("Pulando análise da IA porque o arquivo de conversa não pôde ser salvo.")
-        
-        # Garante que ai_analysis_text nunca seja None ou vazio para jsonify
-        if not ai_analysis_text:
-            print("WARN: ai_analysis_text estava vazio ou None. Definindo para mensagem padrão.")
-            ai_analysis_text = "Analysis result was empty or could not be generated."
-        # -----------------------------------
+            ai_analysis_text = generate_deepseek_analysis(conversation_text, profile)
+            print(f"DEBUG: Análise gerada ({len(ai_analysis_text)} caracteres)")
 
-        # --- Preparar e Enviar Email --- 
-        email_subject = f"Ralph Analysis Completed for {user_name}"
-        email_body = f"Analysis generated by Ralph (DeepSeek AI) for {user_name}:\n\n{ai_analysis_text}\n\n---\nFull conversation log attached."
-        
-        send_email_notification(email_subject, email_body, conversation_filepath)
-        # -------------------------------
+        # Verificar se a análise foi gerada
+        if not ai_analysis_text or ai_analysis_text.strip() == "":
+            ai_analysis_text = "Analysis could not be generated at this time. Please try again later."
+            print("WARN: Análise vazia, usando mensagem padrão")
 
-        # --- Retornar Análise para Frontend --- 
-        # Retorna o texto plano da análise
-        response_data = {"analysis_text": ai_analysis_text}
-        print(f"DEBUG: Preparando para retornar JSON: {json.dumps(response_data)}") # Log 4
-        return jsonify(response_data)
-        # ---------------------------------------
+        # --- Enviar Email (em background, não bloqueia resposta) --- 
+        try:
+            email_subject = f"Ralph Analysis - {user_name} ({profile})"
+            email_body = f"New analysis completed:\n\n{ai_analysis_text}"
+            send_email_notification(email_subject, email_body, conversation_filepath)
+        except Exception as email_error:
+            print(f"WARN: Erro no envio de email (não crítico): {email_error}")
+
+        # --- Retornar Resposta --- 
+        response_data = {
+            "analysis_text": ai_analysis_text,
+            "status": "success"
+        }
+        
+        print(f"DEBUG: Retornando análise com {len(ai_analysis_text)} caracteres")
+        return jsonify(response_data), 200
 
     except Exception as e:
-        print(f"Erro CRÍTICO no endpoint /analyze: {e}", exc_info=True) # Log detalhado da exceção
-        # Fornece uma mensagem de erro genérica para o frontend, mas loga o detalhe
-        error_message_for_user = f"An unexpected error occurred processing your request. Please try again later. Error ID: {uuid.uuid4()}"
-        return jsonify({"analysis_text": error_message_for_user}), 500
+        print(f"ERROR CRÍTICO: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        error_response = {
+            "analysis_text": f"Sorry, an error occurred while processing your analysis. Please try again. If the problem persists, contact support.\n\nError details: {str(e)[:200]}",
+            "status": "error"
+        }
+        return jsonify(error_response), 500
+
+@app.route("/health")
+def health_check():
+    """Endpoint para verificar se o serviço está funcionando."""
+    return jsonify({
+        "status": "healthy",
+        "deepseek_configured": client is not None,
+        "email_configured": bool(EMAIL_SENDER and EMAIL_PASSWORD)
+    })
 
 if __name__ == "__main__":
-    # Esta parte é principalmente para teste local, Render usa o comando gunicorn
-    # O host 0.0.0.0 e a porta via variável de ambiente são corretos para Render
-    print("Iniciando Flask app para teste local...")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
-
-# Removido o handler POST para '/', pois não é necessário e pode causar confusão.
-# A rota genérica /<path:path> agora trata de servir arquivos estáticos.
-
+    print("Iniciando Flask app...")
+    print(f"DeepSeek configurado: {client is not None}")
+    print(f"Email configurado: {bool(EMAIL_SENDER and EMAIL_PASSWORD)}")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
