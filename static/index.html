@@ -36,7 +36,7 @@
             justify-content: center;
             align-items: center;
             opacity: 1;
-            transition: opacity 0.5s ease-out 3s; /* Fade out após 3s */
+            transition: opacity 0.5s ease-out; /* Fade out transition */
         }
 
         #intro-animation-container.hidden {
@@ -64,8 +64,8 @@
                 transform: rotate(720deg) scale(1.5); /* Segunda rotação e crescimento final */
             }
             100% {
-                opacity: 0;
-                transform: rotate(720deg) scale(1.5); /* Mantém estado final e some */
+                opacity: 1; /* Keep visible */
+                transform: rotate(720deg) scale(1.5); /* Mantém estado final */
             }
         }
 
@@ -82,7 +82,7 @@
             overflow: hidden;
             opacity: 0; /* Começa invisível */
             transform: translateY(20px);
-            transition: opacity 1s ease-in 3.5s, transform 1s ease-out 3.5s; /* Aparece após animação + 0.5s */
+            transition: opacity 1s ease-in, transform 1s ease-out; /* Remove delay */
         }
 
         .chat-container.visible {
@@ -515,7 +515,12 @@
                      throw new Error(errorMsg);
                 }
 
-                const result = await response.json();
+                const responseText = await response.text(); // Read as text first
+                if (!responseText) {
+                    throw new Error("Received empty response from server.");
+                }
+
+                const result = JSON.parse(responseText); // Parse text to JSON
 
                 statusMessage.textContent = 'Analysis complete!';
                 setTimeout(() => { statusMessage.style.display = 'none'; }, 2000);
