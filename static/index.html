@@ -1,9 +1,10 @@
+/* Conteúdo completo do index.html com as perguntas atualizadas */
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ralph - Real Estate Business Analysis (v6 - Enhanced)</title>
+    <title>Ralph - Real Estate Business Analysis (v8 - Full Questions)</title>
     <style>
         /* === ESTILOS GERAIS === */
         * {
@@ -14,8 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* Fundo escuro com gradiente sutil */
-            background: #ffffff; /* Initial white background */
+            background: #ffffff; /* Fundo branco inicial */
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -24,64 +24,51 @@
             overflow: hidden; /* Evita scrollbars durante a intro */
         }
 
-        /* === INTRO VIDEO === */
-        #intro-video-container {
+        /* === INTRO ANIMATION CONTAINER === */
+        #intro-animation-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url("intro_background.jpeg");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            background-color: #ffffff; /* Fundo branco */
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
             opacity: 1;
-            transition: opacity 1.5s ease-out; /* Transição mais suave */
+            transition: opacity 0.5s ease-out 3s; /* Fade out após 3s */
         }
 
-        #intro-video-container.hidden {
+        #intro-animation-container.hidden {
             opacity: 0;
-            pointer-events: none; /* Impede interação após desaparecer */
+            pointer-events: none;
         }
 
-        #intro-video {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            /* Tentativa de esconder controles via CSS */
-            pointer-events: none; /* Desabilita cliques/taps diretos no vídeo */
+        #intro-logo {
+            width: 100px; /* Tamanho inicial pequeno */
+            height: 100px;
+            opacity: 0;
+            animation: introAnimation 3s ease-in-out forwards;
         }
 
-        /* Esconder controles de vídeo padrão (especialmente para WebKit/Chrome) */
-        #intro-video::-webkit-media-controls-panel,
-        #intro-video::-webkit-media-controls-play-button,
-        #intro-video::-webkit-media-controls-volume-slider,
-        #intro-video::-webkit-media-controls-fullscreen-button,
-        #intro-video::-webkit-media-controls-timeline,
-        #intro-video::-webkit-media-controls-current-time-display,
-        #intro-video::-webkit-media-controls-time-remaining-display,
-        #intro-video::-webkit-media-controls {
-            display: none !important;
-            opacity: 0 !important;
-            -webkit-appearance: none;
+        @keyframes introAnimation {
+            0% {
+                opacity: 1;
+                transform: rotate(0deg) scale(1);
+            }
+            50% { /* Meio da animação (1.5s) */
+                 transform: rotate(360deg) scale(1.25); /* Primeira rotação e crescimento parcial */
+            }
+            99% { /* Pouco antes do fim (2.97s) */
+                opacity: 1;
+                transform: rotate(720deg) scale(1.5); /* Segunda rotação e crescimento final */
+            }
+            100% {
+                opacity: 0;
+                transform: rotate(720deg) scale(1.5); /* Mantém estado final e some */
+            }
         }
-
-        /* Para Firefox (pode não funcionar perfeitamente para todos os controles) */
-        #intro-video::-moz-media-controls {
-            display: none !important;
-            opacity: 0 !important;
-        }
-
-        /* Fallback genérico (pode não ser suportado) */
-        #intro-video::media-controls {
-             display: none !important;
-             opacity: 0 !important;
-        }
-
 
         /* === CHAT CONTAINER (Inicialmente oculto) === */
         .chat-container {
@@ -90,770 +77,309 @@
             height: 90vh;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2); /* Sombra mais pronunciada no fundo escuro */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
             overflow: hidden;
             opacity: 0; /* Começa invisível */
-            transform: translateY(20px); /* Começa ligeiramente abaixo */
-            transition: opacity 1.5s ease-in, transform 1.5s ease-out; /* Animação combinada */
+            transform: translateY(20px);
+            transition: opacity 1s ease-in 3.5s, transform 1s ease-out 3.5s; /* Aparece após animação + 0.5s */
         }
 
         .chat-container.visible {
             opacity: 1;
-            transform: translateY(0); /* Move para posição final */
+            transform: translateY(0);
         }
 
-        /* === CHAT HEADER (Cor escura) === */
+        /* === CHAT HEADER === */
         .chat-header {
-            background: #100f0f; /* Nova cor escura */
+            background: #100f0f;
             padding: 20px;
             color: white;
             text-align: center;
         }
+        .ai-name { font-size: 18px; font-weight: 500; margin-bottom: 5px; opacity: 0.9; }
+        .chat-header h1 { font-size: 24px; margin-bottom: 5px; }
+        .chat-header p { opacity: 0.9; font-size: 14px; }
+        .progress-bar { height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 15px; overflow: hidden; }
+        .progress-fill { height: 100%; background: white; width: 0%; transition: width 0.3s ease; }
 
-        .ai-name {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 5px;
-            opacity: 0.9;
-        }
-
-        .chat-header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .chat-header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .progress-bar {
-            height: 4px;
-            background: rgba(255,255,255,0.2); /* Fundo da barra mais visível */
-            border-radius: 2px;
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* === CHAT MESSAGES (Fundo claro mantido) === */
+        /* === CHAT MESSAGES === */
         .chat-messages {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            background: #f8f9fa; /* Fundo claro para contraste */
+            background: #f8f9fa;
         }
+        .message { margin-bottom: 20px; opacity: 0; animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .message.bot { display: flex; align-items: flex-start; }
+        .message.user { display: flex; justify-content: flex-end; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; background: #100f0f; font-size: 20px; flex-shrink: 0; }
+        .message-content { max-width: 80%; padding: 15px 20px; border-radius: 20px; word-wrap: break-word; }
+        .message.bot .message-content { background: white; color: #333; border-bottom-left-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .message.user .message-content { background: #100f0f; color: white; border-bottom-right-radius: 5px; max-width: 70%; }
 
-        .message {
-            margin-bottom: 20px;
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .message.bot {
-            display: flex;
-            align-items: flex-start;
-        }
-
-        .message.user {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        /* Avatar com nova cor */
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            background: #100f0f; /* Nova cor escura */
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .message-content {
-            max-width: 80%;
-            padding: 15px 20px;
-            border-radius: 20px;
-            word-wrap: break-word;
-        }
-
-        /* Mensagem do Bot (fundo branco mantido) */
-        .message.bot .message-content {
-            background: white;
-            color: #333;
-            border-bottom-left-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        /* === ESTILOS MELHORADOS PARA DIAGNÓSTICO IA === */
-        .message.bot .diagnosis-box {
-             margin-top: 15px; /* Mais espaço acima */
-             line-height: 1.7; /* Melhor espaçamento entre linhas */
+        /* Estilos para a resposta da IA (agora texto plano) */
+        .message.bot .analysis-text {
+             margin-top: 15px;
+             line-height: 1.6;
              border: 1px solid #e0e0e0;
-             padding: 20px; /* Mais padding interno */
+             padding: 20px;
              border-radius: 10px;
              background-color: #fdfdfd;
-             font-size: 16px; /* Tamanho base da fonte aumentado */
-             color: #333; /* Cor base do texto */
-        }
-        .message.bot .diagnosis-box h3 {
-            font-size: 1.4em; /* Título principal maior */
-            color: #100f0f;
-            margin-bottom: 15px; /* Mais espaço abaixo */
-            padding-bottom: 8px;
-            border-bottom: 1px solid #ccc;
-        }
-        .message.bot .diagnosis-box h4 {
-             margin-top: 20px; /* Espaço antes do subtítulo */
-             margin-bottom: 12px; /* Espaço depois do subtítulo */
-             font-size: 1.2em; /* Subtítulo maior */
-             color: #100f0f; /* Cor mais escura para subtítulos */
-        }
-         .message.bot .diagnosis-box ul {
-            list-style: none;
-            padding-left: 10px; /* Menos indentação */
-            margin-bottom: 15px; /* Espaço após a lista */
-        }
-        .message.bot .diagnosis-box li {
-            margin-bottom: 12px; /* Mais espaço entre itens */
-            padding-left: 25px; /* Espaço para o bullet */
-            position: relative;
-            color: #444; /* Cor do texto do item */
-            font-size: 1.05em; /* Leve aumento no texto do item */
-        }
-        /* Bullet customizado */
-        .message.bot .diagnosis-box li::before {
-            content: '\2022'; /* Bullet padrão */
-            color: #100f0f;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1.2em; /* Alinha o bullet */
-            position: absolute;
-            left: 15px;
-            top: 1px; /* Ajuste fino vertical */
-            font-size: 1.1em;
-        }
-        /* Estilos específicos para pontos positivos e negativos (mantidos) */
-        .diagnosis-positive {
-            color: #28a745; /* Verde */
-            font-weight: bold;
-        }
-        .diagnosis-negative {
-            color: #dc3545; /* Vermelho */
-            font-weight: bold;
-        }
-         .message.bot .diagnosis-box p {
-            margin-bottom: 15px; /* Mais espaço entre parágrafos */
-            font-size: 1.05em; /* Leve aumento no texto do parágrafo */
-            color: #333;
-        }
-         .message.bot .diagnosis-box em {
-            font-size: 0.9em;
-            color: #6c757d;
-            display: block;
-            margin-top: 10px; /* Mais espaço antes do disclaimer */
-        }
-        /* === FIM DOS ESTILOS MELHORADOS PARA DIAGNÓSTICO === */
-
-        /* Mensagem do Usuário (cor escura) */
-        .message.user .message-content {
-            background: #100f0f; /* Nova cor escura */
-            color: white;
-            border-bottom-right-radius: 5px;
-            max-width: 70%;
+             font-size: 16px;
+             color: #333;
+             white-space: pre-wrap; /* Preserva quebras de linha do texto */
         }
 
         /* === INPUT CONTAINER === */
-        .input-container {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #eee;
-        }
+        .input-container { padding: 20px; background: white; border-top: 1px solid #eee; }
+        .input-group { display: flex; gap: 10px; align-items: flex-end; }
+        .input-field { flex: 1; padding: 15px; border: 2px solid #e9ecef; border-radius: 25px; font-size: 16px; outline: none; transition: border-color 0.3s ease; resize: none; min-height: 50px; max-height: 120px; color: #333; }
+        .input-field:focus { border-color: #555; }
+        .input-field:disabled { background-color: #f5f5f5; cursor: not-allowed; }
+        .send-btn { width: 50px; height: 50px; border: none; background: #100f0f; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease, background-color 0.2s ease; font-size: 20px; flex-shrink: 0; }
+        .send-btn:hover:not(:disabled) { transform: scale(1.05); background-color: #333; }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background-color: #100f0f; }
 
-        .input-group {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-        }
+        /* === FILE UPLOAD (Removido visualmente, lógica mantida caso necessário no futuro) === */
+        .file-upload { display: none; }
 
-        .input-field {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 25px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s ease;
-            resize: none;
-            min-height: 50px;
-            max-height: 120px;
-            color: #333;
-        }
-
-        .input-field:focus {
-            border-color: #555; /* Cinza escuro para foco */
-        }
-
-        .input-field:disabled {
-            background-color: #f5f5f5;
-            cursor: not-allowed;
-        }
-
-        /* Botão Enviar (cor escura) */
-        .send-btn {
-            width: 50px;
-            height: 50px;
-            border: none;
-            background: #100f0f; /* Nova cor escura */
-            border-radius: 50%;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-
-        .send-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-            background-color: #333; /* Leve clareada no hover */
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            background-color: #100f0f;
-        }
-
-        /* === FILE UPLOAD (Botão com cor escura) === */
-        .file-upload {
-            position: relative;
-            margin-bottom: 10px;
-        }
-
-        .file-upload input[type="file"] {
-            display: none;
-        }
-
-        .file-upload-btn {
-            padding: 10px 20px;
-            background: #100f0f; /* Nova cor escura */
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
-
-        .file-upload-btn:hover {
-            transform: translateY(-2px);
-            background-color: #333; /* Leve clareada no hover */
-        }
-
-        .uploaded-images {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-
-        .uploaded-image {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #e9ecef;
-        }
-
-        .uploaded-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .remove-image {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 20px;
-            height: 20px;
-            background: #ff4757;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* === TYPING INDICATOR (Cor ajustada) === */
-        .typing-indicator {
-            display: none;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 3px;
-            margin-left: 10px;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #555; /* Cinza escuro */
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-
+        /* === TYPING INDICATOR === */
+        .typing-indicator { display: none; align-items: center; margin-bottom: 20px; }
+        .typing-dots { display: flex; gap: 3px; margin-left: 10px; }
+        .typing-dot { width: 8px; height: 8px; background: #555; border-radius: 50%; animation: typing 1.4s infinite ease-in-out; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        /* === BOTÕES (Tipo de negócio e Finalizar - Cores ajustadas) === */
-        .business-type-selector {
+        /* === BOTÕES INICIAIS e BOTÃO FINALIZAR === */
+        .initial-profile-selector {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin: 20px 0;
         }
-
-        .business-type-btn {
-            padding: 15px 20px;
-            background: #100f0f; /* Nova cor escura */
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: transform 0.2s ease, background-color 0.2s ease;
+        .profile-btn {
+            padding: 15px 20px; background: #100f0f; color: white; border: none; border-radius: 15px; cursor: pointer; font-size: 16px; transition: transform 0.2s ease, background-color 0.2s ease;
         }
+        .profile-btn:hover { transform: translateY(-2px); background-color: #333; }
 
-        .business-type-btn:hover {
-            transform: translateY(-2px);
-            background-color: #333; /* Leve clareada no hover */
-        }
-
-        .finish-btn {
-            width: 100%;
-            padding: 15px;
-            /* Gradiente cinza escuro para finalizar */
-            background: linear-gradient(135deg, #333 0%, #222 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-            display: none;
-        }
-
-        .finish-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            background: linear-gradient(135deg, #444 0%, #333 100%); /* Clareada no hover */
-        }
-
-        .finish-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .finish-btn { width: 100%; padding: 15px; background: linear-gradient(135deg, #333 0%, #222 100%); color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: transform 0.2s ease, background-color 0.2s ease; display: none; }
+        .finish-btn:hover:not(:disabled) { transform: translateY(-2px); background: linear-gradient(135deg, #444 0%, #333 100%); }
+        .finish-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
         /* === OUTROS === */
-        .warning {
-            background: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .status-message {
-            display: none;
-            margin-top: 10px;
-            text-align: center;
-            color: #555;
-        }
-
-        /* === ANIMAÇÃO DE TRANSIÇÃO === */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Overlay de transição para efeito de fade */
-        #transition-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #100f0f;
-            z-index: 999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 1.5s ease-in-out;
-        }
-
-        #transition-overlay.active {
-            opacity: 1;
-        }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; text-align: center; }
+        .status-message { display: none; margin-top: 10px; text-align: center; color: #555; }
 
     </style>
 </head>
 <body>
-    <!-- Overlay de transição para efeito de fade -->
-    <div id="transition-overlay"></div>
 
-    <!-- Intro Video Container -->
-    <div id="intro-video-container">
-        <!-- Adicionado controls="false" e CSS específico para esconder controles -->
-        <video id="intro-video" src="intro_video.mp4" autoplay muted playsinline controls="false"></video>
+    <!-- Intro Animation -->
+    <div id="intro-animation-container">
+        <img id="intro-logo" src="intro_animation_logo.png" alt="Loading Logo">
     </div>
 
-    <!-- Chat Container (initially hidden) -->
-    <div class="chat-container" id="chatContainer">
+    <!-- Chat Container -->
+    <div id="chatContainer" class="chat-container">
         <div class="chat-header">
-            <div class="ai-name">Ralph</div>
-            <h1>🏠 Real Estate Business Analyzer</h1>
-            <p>Discover optimization opportunities for your real estate business</p>
+            <span class="ai-name">Ralph AI</span>
+            <h1>Real Estate Business Analyzer</h1>
+            <p>Let's understand your business better.</p>
             <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+                <div id="progressFill" class="progress-fill"></div>
             </div>
         </div>
-
-        <div class="chat-messages" id="chatMessages">
-            <!-- Mensagem inicial (será adicionada via JS após intro) -->
+        <div id="chatMessages" class="chat-messages">
+            <!-- Mensagens do chat serão adicionadas aqui -->
         </div>
-
         <div class="input-container">
+             <!-- Upload de Imagem (Removido visualmente) -->
             <div class="file-upload">
+                <label for="imageUpload" class="file-upload-btn">Upload Images (Optional)</label>
                 <input type="file" id="imageUpload" accept="image/*" multiple>
-                <label for="imageUpload" class="file-upload-btn">📷 Upload Images (<span id="imageCount">0</span>/<span id="maxImages">3</span>)</label>
-                <div class="uploaded-images" id="uploadedImagesContainer"></div>
+                <span style="font-size: 12px; color: #666;"> (<span id="imageCount">0</span>/<span id="maxImages">3</span> uploaded)</span>
             </div>
-            <div id="limitWarning" class="warning" style="display: none;">
-                You've reached the maximum number of questions or images. Click "Get Analysis" to proceed.
-            </div>
+            <div id="uploadedImagesContainer" class="uploaded-images"></div>
+            <div id="limitWarning" class="warning" style="display: none;">Limit reached. Click Finish to get analysis.</div>
+            
             <div class="input-group">
-                <textarea id="userInput" class="input-field" placeholder="Type your message here..." rows="1"></textarea>
-                <button id="sendBtn" class="send-btn">➤</button>
+                <textarea id="userInput" class="input-field" placeholder="Type your answer..." rows="1" disabled></textarea>
+                <button id="sendBtn" class="send-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </div>
-            <button id="finishBtn" class="finish-btn" disabled>🧠 Get AI Analysis</button>
+             <button id="finishBtn" class="finish-btn" disabled>Click Here for Your Analysis</button>
             <div id="statusMessage" class="status-message"></div>
         </div>
     </div>
 
     <script>
         // --- CONFIGURAÇÃO INICIAL ---
-        const BACKEND_URL = '/analyze'; // URL do backend (relativa para o mesmo servidor)
-        const MAX_IMAGES = 3; // Limite de imagens
-        
+        const BACKEND_URL = '/analyze';
+        let USER_PROFILE = null; // 'individual', 'employee', 'owner'
+
         // --- ELEMENTOS DOM ---
-        const introVideoContainer = document.getElementById('intro-video-container');
-        const introVideo = document.getElementById('intro-video');
+        const introAnimationContainer = document.getElementById('intro-animation-container');
         const chatContainer = document.getElementById('chatContainer');
         const chatMessages = document.getElementById('chatMessages');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const progressFill = document.getElementById('progressFill');
-        const imageUpload = document.getElementById('imageUpload');
-        const uploadedImagesContainer = document.getElementById('uploadedImagesContainer');
-        const imageCountSpan = document.getElementById('imageCount');
-        const maxImagesSpan = document.getElementById('maxImages');
-        const limitWarning = document.getElementById('limitWarning');
         const finishBtn = document.getElementById('finishBtn');
         const statusMessage = document.getElementById('statusMessage');
-        const transitionOverlay = document.getElementById('transition-overlay');
 
         // --- VARIÁVEIS DE ESTADO ---
         let currentQuestionIndex = 0;
         let isFinished = false;
-        let chatHistory = []; // Histórico completo para enviar ao backend
-        let userInfo = {}; // Informações do usuário
-        let userAnswers = {}; // Respostas às perguntas
-        let uploadedImages = []; // Imagens enviadas
-        let isTyping = false; // Flag para indicador de digitação
-        let videoStarted = false; // Flag para controlar se o vídeo começou a ser reproduzido
-        let transitionInitiated = false; // Flag para evitar múltiplas transições
+        let chatHistory = [];
+        let userAnswers = {}; // Armazena Q&A
+        let isTyping = false;
+        let questions = []; // Será preenchido com base no perfil
 
-        // Atualiza o número máximo de imagens no texto
-        maxImagesSpan.textContent = MAX_IMAGES;
-
-        // --- PERGUNTAS PREDEFINIDAS ---
-        const questions = [
-            {
-                id: 'q1',
-                text: "Hi there! I'm Ralph, your real estate business analyzer. What's your name?",
-                key: 'userName',
-                type: 'text',
-                placeholder: 'Enter your name'
-            },
-            {
-                id: 'q2',
-                text: "Great to meet you, {userName}! What type of real estate business are you involved with?",
-                key: 'businessType',
-                type: 'choice',
-                options: [
-                    { label: 'Residential Sales', value: 'residential_sales' },
-                    { label: 'Commercial Real Estate', value: 'commercial_real_estate' },
-                    { label: 'Property Management', value: 'property_management' },
-                    { label: 'Real Estate Investment', value: 'real_estate_investment' },
-                    { label: 'Real Estate Development', value: 'real_estate_development' },
-                    { label: 'Other Real Estate Business', value: 'other_real_estate' }
-                ]
-            },
-            {
-                id: 'q3',
-                text: "Do you work independently or with a company?",
-                key: 'role',
-                type: 'choice',
-                options: [
-                    { label: 'Independent Agent/Broker', value: 'independent' },
-                    { label: 'Work with a Brokerage/Company', value: 'company' },
-                    { label: 'Business Owner/Entrepreneur', value: 'owner' },
-                    { label: 'Other Role', value: 'other_role' }
-                ]
-            },
-            {
-                id: 'q4',
-                text: "If you work with a company or have your own business, what's the name? (Optional)",
-                key: 'companyName',
-                type: 'text',
-                placeholder: 'Enter company name (or skip)',
-                optional: true
-            },
-            {
-                id: 'q5',
-                text: "What's your biggest challenge in your real estate business right now?",
-                key: 'challenge',
-                type: 'choice',
-                options: [
-                    { label: 'Finding new clients/leads', value: 'leads' },
-                    { label: 'Managing time effectively', value: 'time_management' },
-                    { label: 'Keeping up with paperwork/admin', value: 'paperwork' },
-                    { label: 'Marketing properties effectively', value: 'marketing' },
-                    { label: 'Closing deals/negotiations', value: 'closing' },
-                    { label: 'Technology/digital tools', value: 'technology' },
-                    { label: 'Other challenge', value: 'other_challenge' }
-                ]
-            },
-            {
-                id: 'q6',
-                text: "How much time do you spend weekly on administrative tasks (paperwork, emails, scheduling)?",
-                key: 'adminTime',
-                type: 'choice',
-                options: [
-                    { label: 'Less than 5 hours', value: 'under_5h' },
-                    { label: '5-10 hours', value: '5_10h' },
-                    { label: '10-20 hours', value: '10_20h' },
-                    { label: 'More than 20 hours', value: 'over_20h' },
-                    { label: 'Not sure', value: 'unknown' }
-                ]
-            },
-            {
-                id: 'q7',
-                text: "What's your approximate monthly budget for business tools and marketing?",
-                key: 'budget',
-                type: 'choice',
-                options: [
-                    { label: 'Under $100', value: 'under_100' },
-                    { label: '$100-$500', value: '100_500' },
-                    { label: '$500-$1000', value: '500_1000' },
-                    { label: 'Over $1000', value: 'over_1000' },
-                    { label: 'Prefer not to say', value: 'no_answer' }
-                ]
-            },
-            {
-                id: 'q8',
-                text: "What tools or software do you currently use in your business?",
-                key: 'tools',
-                type: 'choice',
-                options: [
-                    { label: 'CRM software', value: 'crm' },
-                    { label: 'MLS/property databases', value: 'mls' },
-                    { label: 'Social media management tools', value: 'social_media' },
-                    { label: 'Document/contract software', value: 'documents' },
-                    { label: 'Email marketing tools', value: 'email' },
-                    { label: 'Basic tools (email, spreadsheets)', value: 'basic' },
-                    { label: 'Other specialized tools', value: 'other_tools' }
-                ]
-            },
-            {
-                id: 'q9',
-                text: "What's your primary goal for the next 6 months in your business?",
-                key: 'goal',
-                type: 'choice',
-                options: [
-                    { label: 'Increase number of clients', value: 'more_clients' },
-                    { label: 'Improve profit margins', value: 'better_margins' },
-                    { label: 'Reduce working hours', value: 'less_hours' },
-                    { label: 'Expand to new market/area', value: 'expansion' },
-                    { label: 'Improve marketing/visibility', value: 'better_marketing' },
-                    { label: 'Streamline operations', value: 'streamline' },
-                    { label: 'Other goal', value: 'other_goal' }
-                ]
-            },
-            {
-                id: 'q10',
-                text: "Last question: If you could automate one aspect of your business, what would it be?",
-                key: 'automation',
-                type: 'choice',
-                options: [
-                    { label: 'Lead generation', value: 'lead_gen' },
-                    { label: 'Follow-up communications', value: 'follow_up' },
-                    { label: 'Document preparation', value: 'documents' },
-                    { label: 'Marketing/social media', value: 'marketing' },
-                    { label: 'Client relationship management', value: 'crm' },
-                    { label: 'Market analysis/research', value: 'research' },
-                    { label: 'Other process', value: 'other_process' }
-                ]
-            }
+        // --- DEFINIÇÃO DAS PERGUNTAS POR PERFIL (20 perguntas cada) ---
+        const questions_individual = [
+            { id: 'q1', text: "Hi there! I'm Ralph. To start, what's your name?", key: 'userName', placeholder: 'Enter your name' },
+            { id: 'q2', text: "Great, {userName}! As an independent agent, what's your primary focus area? (e.g., residential sales, luxury rentals, commercial leases)", key: 'focusArea', placeholder: 'Describe your main focus' },
+            { id: 'q3', text: "Which geographical region or specific neighborhoods do you primarily serve?", key: 'region', placeholder: 'e.g., Downtown Miami, South Beach' },
+            { id: 'q4', text: "How long have you been working as an independent real estate agent?", key: 'experienceYears', placeholder: 'e.g., 5 years, 6 months' },
+            { id: 'q5', text: "What are your main sources for generating new leads currently? (e.g., referrals, online ads, social media, networking)", key: 'leadSources', placeholder: 'List your primary lead sources' },
+            { id: 'q6', text: "Which lead source brings you the highest quality clients, even if not the highest volume?", key: 'qualityLeadSource', placeholder: 'e.g., Referrals from past clients' },
+            { id: 'q7', text: "On average, how many hours per week do you dedicate specifically to prospecting and lead generation activities?", key: 'prospectingHours', placeholder: 'Estimate hours per week' },
+            { id: 'q8', text: "What tools or software (CRM, marketing tools, etc.) do you currently use to manage your clients and leads?", key: 'toolsUsed', placeholder: 'List software/tools (or None)' },
+            { id: 'q9', text: "How satisfied are you with your current tools? What's missing or could be better?", key: 'toolSatisfaction', placeholder: 'Describe satisfaction and gaps' },
+            { id: 'q10', text: "Describe your typical process for following up with a new lead.", key: 'followUpProcess', placeholder: 'Steps you take after getting a lead' },
+            { id: 'q11', text: "What's the biggest challenge you face in converting leads into actual clients?", key: 'conversionChallenge', placeholder: 'Describe the main difficulty' },
+            { id: 'q12', text: "How do you currently manage your schedule and appointments?", key: 'scheduleManagement', placeholder: 'e.g., Google Calendar, specific app, paper diary' },
+            { id: 'q13', text: "Which administrative task takes up the most significant portion of your non-selling time? (e.g., paperwork, scheduling viewings, marketing prep)", key: 'adminTimeSink', placeholder: 'Identify the most time-consuming task' },
+            { id: 'q14', text: "How do you stay updated on market trends and property values in your area?", key: 'marketKnowledgeSource', placeholder: 'e.g., MLS data, industry reports, networking' },
+            { id: 'q15', text: "What is your strategy for marketing your listings or yourself as an agent?", key: 'marketingStrategy', placeholder: 'Describe your marketing approach' },
+            { id: 'q16', text: "What percentage of your business comes from repeat clients or referrals?", key: 'repeatBusinessPercentage', placeholder: 'Estimate percentage (e.g., 30%)' },
+            { id: 'q17', text: "What is one skill you'd like to improve to grow your business further? (e.g., negotiation, digital marketing, video creation)", key: 'skillImprovement', placeholder: 'Identify a skill to develop' },
+            { id: 'q18', text: "How do you handle transaction management and paperwork for closings?", key: 'transactionManagement', placeholder: 'Describe your process or tools used' },
+            { id: 'q19', text: "What is your income goal for the next 12 months?", key: 'incomeGoal', placeholder: 'Enter your target income' },
+            { id: 'q20', text: "Thinking about all the tasks you do, if you could magically automate one repetitive part of your work to free up time, what would it be?", key: 'automationWish', placeholder: 'e.g., Sending market updates to leads' }
+        ];
+        const questions_employee = [
+            { id: 'q1', text: "Hi there! I'm Ralph. Let's start with your name?", key: 'userName', placeholder: 'Enter your name' },
+            { id: 'q2', text: "Nice to meet you, {userName}! What's the name of the real estate company or brokerage you work for?", key: 'companyName', placeholder: 'Enter company name' },
+            { id: 'q3', text: "What is your specific role within the company? (e.g., Sales Agent, Team Lead, Marketing Coordinator, Transaction Coordinator)", key: 'role', placeholder: 'Describe your role' },
+            { id: 'q4', text: "How long have you been working at this company?", key: 'companyTenure', placeholder: 'e.g., 2 years, 10 months' },
+            { id: 'q5', text: "Does your company provide you with leads? If so, what are the primary sources? (e.g., Zillow, company website, marketing campaigns)", key: 'companyLeadSources', placeholder: 'Describe lead sources provided (or None)' },
+            { id: 'q6', text: "What CRM (Customer Relationship Management) system does your company use, if any?", key: 'crmSystem', placeholder: 'e.g., Salesforce, Follow Up Boss, proprietary system' },
+            { id: 'q7', text: "How effective do you find the company's CRM for managing your workflow and client interactions? What could be improved?", key: 'crmEffectiveness', placeholder: 'Describe effectiveness and areas for improvement' },
+            { id: 'q8', text: "What level of training or support does the company provide regarding technology and software tools?", key: 'techTraining', placeholder: 'Describe the tech training/support' },
+            { id: 'q9', text: "Describe the process for collaborating with other agents or departments within your company on a deal.", key: 'collaborationProcess', placeholder: 'How do you work with others internally?' },
+            { id: 'q10', text: "What are the company's expectations regarding your sales targets or performance metrics?", key: 'performanceExpectations', placeholder: 'Describe targets or KPIs' },
+            { id: 'q11', text: "Which internal company process do you find the most time-consuming or inefficient? (e.g., reporting, compliance checks, marketing material approval)", key: 'inefficientProcess', placeholder: 'Identify a time-consuming internal process' },
+            { id: 'q12', text: "How does the company handle marketing for its agents or listings? Do you have input or control over this?", key: 'companyMarketing', placeholder: 'Describe the company marketing process' },
+            { id: 'q13', text: "What opportunities for professional development or career growth are available within the company?", key: 'growthOpportunities', placeholder: 'Describe development opportunities' },
+            { id: 'q14', text: "How is communication managed within your team or the company overall? (e.g., email, Slack, meetings)", key: 'internalCommunication', placeholder: 'Describe communication methods' },
+            { id: 'q15', text: "What is the biggest challenge you face in meeting your goals within the current company structure or processes?", key: 'internalChallenge', placeholder: 'Describe your main challenge at the company' },
+            { id: 'q16', text: "Does the company utilize any specific tools for transaction management or document handling?", key: 'companyTransactionTools', placeholder: 'List tools like DocuSign, SkySlope, etc.' },
+            { id: 'q17', text: "How much autonomy do you have in your day-to-day tasks and decision-making?", key: 'autonomyLevel', placeholder: 'Describe your level of independence' },
+            { id: 'q18', text: "What kind of performance feedback or reviews do you receive from management?", key: 'performanceFeedback', placeholder: 'Describe the feedback process' },
+            { id: 'q19', text: "What is one tool or system you wish the company would adopt to make your job easier or more effective?", key: 'toolWish', placeholder: 'Suggest a tool or system' },
+            { id: 'q20', text: "If one repetitive task related to company processes (like reporting, data entry, or internal communication) could be automated, which one would save you the most time?", key: 'automationWish', placeholder: 'e.g., Generating weekly reports' }
+        ];
+        const questions_owner = [
+            { id: 'q1', text: "Hi there! I'm Ralph. Great to connect. What's your name?", key: 'userName', placeholder: 'Enter your name' },
+            { id: 'q2', text: "Welcome, {userName}! What is the official name of your real estate business?", key: 'businessName', placeholder: 'Enter your business name' },
+            { id: 'q3', text: "What specific niche or types of real estate services does your business specialize in?", key: 'businessServices', placeholder: 'e.g., Luxury residential, Commercial investments' },
+            { id: 'q4', text: "How many agents and support staff (admin, marketing, etc.) are currently part of your team?", key: 'teamSize', placeholder: 'e.g., 10 agents, 3 support staff' },
+            { id: 'q5', text: "What is your company's primary strategy for generating leads for your agents?", key: 'leadGenStrategy', placeholder: 'Describe your main lead generation methods' },
+            { id: 'q6', text: "Which lead generation channel currently provides the best Return on Investment (ROI) for your business?", key: 'bestRoiChannel', placeholder: 'e.g., Google Ads, Zillow Premier Agent' },
+            { id: 'q7', text: "What CRM or central platform do you use to manage operations, clients, and agent performance?", key: 'businessCRM', placeholder: 'List your main operational software' },
+            { id: 'q8', text: "How effective is your current technology stack in supporting your business goals? What are the main gaps?", key: 'techStackEffectiveness', placeholder: 'Assess your tech and identify gaps' },
+            { id: 'q9', text: "What are the key performance indicators (KPIs) you track to measure the success of your business and your agents?", key: 'businessKPIs', placeholder: 'List the main KPIs you monitor' },
+            { id: 'q10', text: "What is the biggest operational bottleneck or inefficiency currently impacting your business's profitability or growth?", key: 'operationalBottleneck', placeholder: 'Describe the main inefficiency' },
+            { id: 'q11', text: "How do you handle agent onboarding, training, and ongoing professional development?", key: 'agentTrainingProcess', placeholder: 'Describe your training approach' },
+            { id: 'q12', text: "What is your process for ensuring compliance and managing transaction paperwork across your team?", key: 'complianceProcess', placeholder: 'Describe how you manage compliance' },
+            { id: 'q13', text: "What percentage of your operating budget is allocated to marketing and technology respectively?", key: 'budgetAllocation', placeholder: 'Estimate % for marketing and tech' },
+            { id: 'q14', text: "How do you foster team collaboration and communication within your brokerage?", key: 'teamCollaboration', placeholder: 'Describe methods for team communication' },
+            { id: 'q15', text: "What are your primary business goals for the next 1-3 years? (e.g., market share growth, expansion, profitability increase)", key: 'businessGoals', placeholder: 'List your main goals' },
+            { id: 'q16', text: "Who do you consider your main competitors, and what is your key differentiator?", key: 'competitionDifferentiation', placeholder: 'Identify competitors and your unique value' },
+            { id: 'q17', text: "How much time do you personally spend on administrative or operational tasks versus strategic growth activities?", key: 'ownerTimeAllocation', placeholder: 'Estimate time split (e.g., 60% admin, 40% strategy)' },
+            { id: 'q18', text: "What system do you have in place for financial reporting and analysis?", key: 'financialReporting', placeholder: 'Describe your financial tracking system' },
+            { id: 'q19', text: "What is the biggest challenge you anticipate facing in the real estate market over the next year?", key: 'marketChallengeAnticipation', placeholder: 'Describe an anticipated challenge' },
+            { id: 'q20', text: "If you could implement an automated system to handle one major operational task (like lead distribution, agent reporting, or transaction tracking), which would have the biggest positive impact on your business?", key: 'automationImpactWish', placeholder: 'e.g., Automating commission calculations' }
         ];
 
         // --- FUNÇÕES DE INTERFACE ---
-        
-        // Adiciona mensagem ao chat
         function addMessage(sender, content, isHTML = false) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message', sender);
-
             let messageContent = '';
             if (sender === 'bot') {
-                messageContent = `
-                    <div class="avatar">R</div>
-                    <div class="message-content">${isHTML ? content : escapeHTML(content)}</div>
-                `;
+                // Verifica se é a análise final (texto plano)
+                if (content.includes('Analysis generated by Ralph')) { // Identificador simples
+                     messageContent = `<div class="avatar">R</div><div class="message-content"><pre class="analysis-text">${escapeHTML(content)}</pre></div>`;
+                } else {
+                     messageContent = `<div class="avatar">R</div><div class="message-content">${isHTML ? content : escapeHTML(content)}</div>`;
+                }
             } else {
-                messageContent = `
-                    <div class="message-content">${isHTML ? content : escapeHTML(content)}</div>
-                `;
+                messageContent = `<div class="message-content">${escapeHTML(content)}</div>`; // Sempre escapa input do usuário
             }
-
             messageDiv.innerHTML = messageContent;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Adiciona ao histórico para enviar ao backend
-            chatHistory.push({
-                sender: sender,
-                content: content
-            });
+            // Adiciona ao histórico APENAS se não for a mensagem de seleção de perfil do bot
+            if (!(sender === 'bot' && content.includes('To start, please tell me a bit about your role:'))) {
+                 chatHistory.push({ sender: sender, content: content });
+            }
         }
 
-        // Escapa HTML para prevenir XSS
         function escapeHTML(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Mostra indicador de digitação
         function showTyping() {
             if (isTyping) return;
             isTyping = true;
-
             const typingDiv = document.createElement('div');
-            typingDiv.classList.add('typing-indicator');
+            typingDiv.classList.add('message', 'bot', 'typing-indicator');
             typingDiv.id = 'typingIndicator';
-            typingDiv.innerHTML = `
-                <div class="avatar">R</div>
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
+            typingDiv.innerHTML = `<div class="avatar">R</div><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
             chatMessages.appendChild(typingDiv);
             typingDiv.style.display = 'flex';
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Esconde indicador de digitação
         function hideTyping() {
             isTyping = false;
             const typingDiv = document.getElementById('typingIndicator');
-            if (typingDiv) {
-                typingDiv.remove();
-            }
+            if (typingDiv) typingDiv.remove();
         }
 
-        // Atualiza a barra de progresso
         function updateProgress() {
-            const progress = (currentQuestionIndex / questions.length) * 100;
+            const progress = questions.length > 0 ? (currentQuestionIndex / questions.length) * 100 : 0;
             progressFill.style.width = `${progress}%`;
         }
 
-        // --- FUNÇÕES DE INTERAÇÃO ---
-        
-        // Processa input do usuário
+        // --- FUNÇÕES DE INTERAÇÃO (MODIFICADAS) ---
         function handleUserInput() {
             const text = userInput.value.trim();
-            if (!text || isFinished) return;
+            if (!text || isFinished || USER_PROFILE === null) return;
 
             addMessage('user', text);
             userInput.value = '';
-            
-            // Ajusta altura do textarea
-            userInput.style.height = 'auto';
+            userInput.style.height = 'auto'; // Reset height after sending
+            userInput.disabled = true;
+            sendBtn.disabled = true;
 
-            // Processa resposta para a pergunta atual
             const currentQuestion = questions[currentQuestionIndex];
             if (currentQuestion.key) {
-                userInfo[currentQuestion.key] = text;
+                userAnswers[currentQuestion.key] = text; // Armazena resposta
             }
-            
-            // Armazena Q&A para o prompt da IA
-            userAnswers[currentQuestion.id] = { 
-                question: currentQuestion.text.replace('{userName}', userInfo.userName), 
-                answer: text 
-            };
 
             currentQuestionIndex++;
             updateProgress();
 
-            // Mostra próxima pergunta ou finaliza
             if (currentQuestionIndex < questions.length) {
                 askNextQuestion();
             } else {
@@ -861,141 +387,99 @@
             }
         }
 
-        // Faz a próxima pergunta
         function askNextQuestion() {
+             if (isFinished || USER_PROFILE === null || currentQuestionIndex >= questions.length) return;
+
             const currentQuestion = questions[currentQuestionIndex];
             let questionText = currentQuestion.text;
-            
-            // Substitui placeholders
-            if (userInfo.userName && questionText.includes('{userName}')) {
-                questionText = questionText.replace('{userName}', userInfo.userName);
+
+            // Substitui placeholders como {userName}
+            if (userAnswers.userName && questionText.includes('{userName}')) {
+                questionText = questionText.replace('{userName}', userAnswers.userName);
             }
+            // Adicionar mais substituições se necessário para outras chaves
 
             showTyping();
-            
             setTimeout(() => {
                 hideTyping();
-                
-                // Adiciona a pergunta como mensagem do bot
                 addMessage('bot', questionText);
-                
-                // Se for pergunta de escolha, mostra botões
-                if (currentQuestion.type === 'choice') {
-                    showChoiceButtons(currentQuestion.options);
-                    userInput.disabled = true;
-                    sendBtn.disabled = true;
-                } else {
-                    userInput.disabled = false;
-                    sendBtn.disabled = false;
-                    userInput.placeholder = currentQuestion.placeholder || 'Type your answer...';
-                    userInput.focus();
-                }
-                
-                checkLimits();
-            }, 1000);
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.placeholder = currentQuestion.placeholder || 'Type your answer...';
+                userInput.focus();
+            }, 1000 + Math.random() * 500); // Pequeno delay aleatório
         }
 
-        // Mostra botões de escolha
-        function showChoiceButtons(options) {
+        // Função para mostrar os botões iniciais de perfil
+        function showProfileSelection() {
+            const profileOptions = [
+                { label: 'I work independently', value: 'individual' },
+                { label: 'I work for a real estate company/brokerage', value: 'employee' },
+                { label: 'I own a real estate business', value: 'owner' }
+            ];
+
+            addMessage('bot', "To start, please tell me a bit about your role:");
+
             const buttonsDiv = document.createElement('div');
-            buttonsDiv.classList.add('business-type-selector');
-            buttonsDiv.id = 'choiceButtons';
-            
-            options.forEach(option => {
+            buttonsDiv.classList.add('initial-profile-selector');
+            buttonsDiv.id = 'profileButtons';
+
+            profileOptions.forEach(option => {
                 const button = document.createElement('button');
-                button.classList.add('business-type-btn');
+                button.classList.add('profile-btn');
                 button.textContent = option.label;
-                button.onclick = () => handleChoiceSelection(option.value);
+                button.onclick = () => handleProfileSelection(option.value);
                 buttonsDiv.appendChild(button);
             });
-            
+
             chatMessages.appendChild(buttonsDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            userInput.disabled = true;
+            sendBtn.disabled = true;
         }
 
-        // Remove botões de escolha
-        function removeChoiceButtons() {
-            const buttonsDiv = document.getElementById('choiceButtons');
-            if (buttonsDiv) {
-                buttonsDiv.remove();
+        // Função para processar a seleção de perfil
+        function handleProfileSelection(profile) {
+            USER_PROFILE = profile;
+            const profileButtons = document.getElementById('profileButtons');
+            if (profileButtons) profileButtons.remove();
+
+            // Adiciona a seleção como mensagem do usuário (para histórico)
+            const selectedLabel = profile === 'individual' ? 'Selected: I work independently' :
+                                profile === 'employee' ? 'Selected: I work for a real estate company/brokerage' :
+                                'Selected: I own a real estate business';
+            addMessage('user', selectedLabel);
+
+            // Define o conjunto de perguntas correto
+            if (profile === 'individual') questions = questions_individual;
+            else if (profile === 'employee') questions = questions_employee;
+            else if (profile === 'owner') questions = questions_owner;
+            else {
+                addMessage('bot', 'Sorry, something went wrong with profile selection.');
+                return;
             }
-            userInput.disabled = false;
-            sendBtn.disabled = false;
-        }
 
-        // Processa seleção de escolha
-        function handleChoiceSelection(value) {
-            const selectedOption = questions[currentQuestionIndex].options.find(opt => opt.value === value);
-            addMessage('user', selectedOption.label); // Mostra a label selecionada como resposta do user
-            removeChoiceButtons();
-
-            // Armazena a resposta
-            const currentQuestion = questions[currentQuestionIndex];
-            if (currentQuestion.key) {
-                userInfo[currentQuestion.key] = value; // Armazena o valor interno
-            }
-             // Armazena Q&A para o prompt da IA
-            userAnswers[currentQuestion.id] = { question: currentQuestion.text.replace('{userName}', userInfo.userName), answer: selectedOption.label };
-
-            currentQuestionIndex++;
+            // Inicia o questionário
+            currentQuestionIndex = 0;
             updateProgress();
-
-            if (currentQuestionIndex < questions.length) {
-                askNextQuestion();
-            } else {
-                finishConversation();
-            }
+            askNextQuestion();
         }
 
-        // Finaliza a conversa e habilita o botão de diagnóstico
         function finishConversation() {
             isFinished = true;
             userInput.disabled = true;
             sendBtn.disabled = true;
-            imageUpload.disabled = true; // Desabilita upload de imagem
-            document.querySelector('.file-upload-btn').style.cursor = 'not-allowed';
-            document.querySelector('.file-upload-btn').style.opacity = '0.7';
 
             showTyping();
             setTimeout(() => {
                 hideTyping();
-                addMessage('bot', "Thanks for sharing! You've answered all the questions. Click the button below to get your personalized AI analysis.");
+                addMessage('bot', "Thanks for sharing all that information! You've answered all the questions. Click the button below to get your personalized AI analysis.");
                 finishBtn.style.display = 'block';
                 finishBtn.disabled = false;
-                limitWarning.style.display = 'none'; // Esconde aviso de limite
             }, 1000);
         }
 
-        // Verifica limites de perguntas e imagens
-        function checkLimits() {
-            const questionLimitReached = currentQuestionIndex >= questions.length;
-            const imageLimitReached = uploadedImages.length >= MAX_IMAGES;
-
-            if (questionLimitReached || imageLimitReached) {
-                if (!isFinished) {
-                    limitWarning.style.display = 'block';
-                    finishBtn.style.display = 'block';
-                    finishBtn.disabled = false;
-                    userInput.disabled = true;
-                    sendBtn.disabled = true;
-                    removeChoiceButtons();
-                }
-            }
-
-            // Atualiza estado do botão de upload
-            if (imageLimitReached) {
-                imageUpload.disabled = true;
-                document.querySelector('.file-upload-btn').style.cursor = 'not-allowed';
-                document.querySelector('.file-upload-btn').style.opacity = '0.7';
-            } else {
-                 imageUpload.disabled = isFinished; // Só desabilita se a conversa acabou
-                 document.querySelector('.file-upload-btn').style.cursor = isFinished ? 'not-allowed' : 'pointer';
-                 document.querySelector('.file-upload-btn').style.opacity = isFinished ? '0.7' : '1';
-            }
-        }
-
-        // Envia dados para o backend e mostra diagnóstico
-        async function getDiagnosis() {
+        async function getAnalysis() {
             if (!isFinished) return;
 
             finishBtn.disabled = true;
@@ -1003,29 +487,33 @@
             statusMessage.textContent = 'Sending data for analysis...';
             statusMessage.style.display = 'block';
 
-            // Prepara dados para envio
+            // Prepara dados para enviar (inclui perfil e histórico)
             const dataToSend = {
-                ...userInfo,
-                questions: Object.values(userAnswers), // Envia o array de Q&A
-                images: uploadedImages, // Envia base64 das imagens
-                chatHistory: chatHistory // Envia histórico completo para email
+                userName: userAnswers.userName || 'User',
+                profile: USER_PROFILE,
+                chatHistory: chatHistory // Envia histórico completo para TXT e email
+                // userAnswers são parte do chatHistory agora
             };
 
             try {
                 statusMessage.textContent = 'Connecting to AI...';
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSend),
                 });
 
                 statusMessage.textContent = 'Processing analysis...';
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ diagnosis_html: `<p>Error: ${response.statusText}. Could not parse error details.</p>` }));
-                    throw new Error(errorData.diagnosis_html || `HTTP error! status: ${response.status}`);
+                    let errorMsg = `HTTP error! status: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.analysis_text || errorData.error || JSON.stringify(errorData);
+                    } catch (jsonError) {
+                         try { errorMsg = await response.text(); } catch (textError) { /* ignore */ }
+                    }
+                     throw new Error(errorMsg);
                 }
 
                 const result = await response.json();
@@ -1033,179 +521,54 @@
                 statusMessage.textContent = 'Analysis complete!';
                 setTimeout(() => { statusMessage.style.display = 'none'; }, 2000);
 
-                // Adiciona o diagnóstico como mensagem do bot
-                addMessage('bot', result.diagnosis_html, true);
+                // Adiciona a análise (texto plano) como mensagem do bot
+                addMessage('bot', result.analysis_text || "Analysis received, but content is empty.");
                 finishBtn.textContent = 'Analysis Complete!';
-                // Opcional: Esconder o botão após completar
-                // finishBtn.style.display = 'none';
+                // finishBtn.style.display = 'none'; // Opcional: esconder botão
 
             } catch (error) {
-                console.error('Error fetching diagnosis:', error);
+                console.error('Error fetching analysis:', error);
                 statusMessage.textContent = 'Error during analysis.';
-                // Mostra erro detalhado no chat
-                addMessage('bot', `<div class="diagnosis-box"><p><strong>Analysis Error</strong></p><p>Sorry, an error occurred while generating your analysis:</p><p><em>${error.message || 'Unknown error'}</em></p><p>Please check the console for more details or try again later.</p></div>`, true);
-                finishBtn.textContent = 'Analysis Failed - Retry?'; // Ou apenas 'Error'
-                finishBtn.disabled = false; // Permite tentar novamente?
+                addMessage('bot', `<div class="analysis-text"><strong>Analysis Error</strong><br>Sorry, an error occurred: ${escapeHTML(error.message || 'Unknown error')}<br>Please check the console or try again later.</div>`);
+                finishBtn.textContent = 'Analysis Failed - Try Again?'; // Permite tentar novamente
+                finishBtn.disabled = false; // Reabilita o botão em caso de erro
             }
         }
 
-        // --- UPLOAD DE IMAGEM --- 
-        imageUpload.addEventListener('change', (event) => {
-            if (isFinished) return;
-
-            const files = event.target.files;
-            let filesProcessed = 0;
-
-            for (let i = 0; i < files.length; i++) {
-                if (uploadedImages.length >= MAX_IMAGES) break;
-
-                const file = files[i];
-                const reader = new FileReader();
-
-                reader.onload = (e) => {
-                    const base64String = e.target.result;
-                    const imageId = `img_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-                    uploadedImages.push({ id: imageId, name: file.name, data: base64String });
-                    displayUploadedImage(imageId, base64String);
-                    updateImageCount();
-                    checkLimits();
-                    filesProcessed++;
-                    if (filesProcessed === files.length || uploadedImages.length === MAX_IMAGES) {
-                         // Limpa o input para permitir selecionar o mesmo arquivo novamente se removido
-                         imageUpload.value = null;
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function displayUploadedImage(id, base64) {
-            const imgContainer = document.createElement('div');
-            imgContainer.classList.add('uploaded-image');
-            imgContainer.dataset.id = id;
-
-            const img = document.createElement('img');
-            img.src = base64;
-            img.alt = 'Uploaded image';
-
-            const removeBtn = document.createElement('button');
-            removeBtn.classList.add('remove-image');
-            removeBtn.textContent = 'X';
-            removeBtn.onclick = () => removeImage(id);
-
-            imgContainer.appendChild(img);
-            imgContainer.appendChild(removeBtn);
-            uploadedImagesContainer.appendChild(imgContainer);
-        }
-
-        function removeImage(id) {
-            uploadedImages = uploadedImages.filter(img => img.id !== id);
-            const imgElement = uploadedImagesContainer.querySelector(`.uploaded-image[data-id="${id}"]`);
-            if (imgElement) {
-                imgElement.remove();
-            }
-            updateImageCount();
-            checkLimits();
-        }
-
-        function updateImageCount() {
-            imageCountSpan.textContent = uploadedImages.length;
-        }
-
-        // --- INICIALIZAÇÃO COM ANIMAÇÃO APRIMORADA --- 
-        function startChat() {
-            // Evita múltiplas chamadas à função
-            if (transitionInitiated) return;
-            transitionInitiated = true;
-            
+        // --- INICIALIZAÇÃO COM ANIMAÇÃO --- 
+        function startChatInterface() {
             console.log("Iniciando transição para o chat");
-            
-            // Ativa o overlay de transição
-            transitionOverlay.classList.add('active');
-            
-            // Após um breve momento, inicia a transição do vídeo
+            introAnimationContainer.classList.add('hidden');
+            // Muda fundo do body APÓS a animação e ANTES do chat aparecer
+            document.body.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%)';
+            chatContainer.classList.add('visible');
+            document.body.style.overflow = 'auto';
+
+            // Mostra a seleção de perfil inicial
             setTimeout(() => {
-                introVideoContainer.classList.add('hidden');
-                
-                // Após a transição do vídeo, desativa o overlay e mostra o chat
-                setTimeout(() => {
-                    transitionOverlay.classList.remove('active');
-                    introVideoContainer.style.display = 'none'; // Remove            setTimeout(() => {
-                document.body.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%)'; // Change background
-                chatContainer.classList.add('visible');
-                document.body.style.overflow = 'auto'; // Restaura scroll se necessárioo
-                    
-                    // Inicia a conversa com animação de entrada
-                    setTimeout(() => {
-                        askNextQuestion();
-                    }, 500); // Pequeno atraso para melhor efeito visual
-                }, 1500); // Tempo igual à transição de opacidade
-            }, 300); // Breve atraso para ativar o overlay
+                 showProfileSelection();
+            }, 500); // Pequeno atraso para efeito
         }
 
-        // Monitora o carregamento do vídeo
-        introVideo.addEventListener('loadeddata', () => {
-            console.log("Vídeo carregado");
-            videoStarted = true;
-        });
-
-        // Event listener para o fim do vídeo
-        introVideo.addEventListener('ended', () => {
-            console.log("Vídeo terminou");
-            startChat();
-        });
-
-        // Event listener para erros no vídeo
-        introVideo.addEventListener('error', (e) => {
-            console.error("Erro no vídeo:", e);
-            startChat();
-        });
-
-        // Fallback: Se o vídeo não tocar ou falhar, inicia o chat após um tempo
-        const fallbackTimeout = setTimeout(() => {
-            console.log("Fallback timeout acionado");
-            startChat();
-        }, 7000);
-
-        // Limpa o timeout se o vídeo começar a tocar
-        introVideo.addEventListener('play', () => {
-            console.log("Vídeo começou a tocar");
-            videoStarted = true;
-            clearTimeout(fallbackTimeout);
-        });
-
-        // Tenta dar play no vídeo (necessário para autoplay em alguns navegadores)
-        introVideo.play().catch(error => {
-            console.warn("Autoplay foi bloqueado, iniciando chat diretamente ou esperando interação.", error);
-            // Se o autoplay falhar, pode ser necessário um clique do usuário.
-            // Neste caso, o 'ended' não será disparado, então o fallback ou 'error' cuidará disso.
-        });
-
-        // Fallback adicional: Se o vídeo estiver carregado mas não iniciar em 2 segundos
-        setTimeout(() => {
-            if (videoStarted && introVideo.paused) {
-                console.log("Vídeo carregado mas não iniciou, forçando transição");
-                startChat();
-            }
-        }, 2000);
+        // Inicia a transição após a animação (3s de animação + 0.5s de fade out)
+        setTimeout(startChatInterface, 3500);
 
         // Event listeners para input e botões
+        userInput.addEventListener('input', () => {
+            // Auto-ajuste da altura do textarea
+            userInput.style.height = 'auto';
+            userInput.style.height = (userInput.scrollHeight) + 'px';
+        });
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Impede nova linha
+                e.preventDefault();
                 handleUserInput();
             }
         });
         sendBtn.addEventListener('click', handleUserInput);
-        finishBtn.addEventListener('click', getDiagnosis);
-
-        // Adiciona um listener de clique no container do vídeo para iniciar a transição
-        // Isso ajuda em dispositivos móveis onde o autoplay pode ser bloqueado
-        introVideoContainer.addEventListener('click', () => {
-            console.log("Container do vídeo clicado");
-            startChat();
-        });
+        finishBtn.addEventListener('click', getAnalysis);
 
     </script>
 </body>
 </html>
+
