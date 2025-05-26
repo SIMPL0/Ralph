@@ -5,7 +5,7 @@ import random
 import re
 import html
 import uuid # Para nomes de arquivo únicos
-from openai import OpenAI # Importa OpenAI para API compatível com DeepSeek
+import openai # Importa OpenAI globalmente
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication # Para anexar arquivos
@@ -35,20 +35,20 @@ EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com") # Email p
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # Chave da API DeepSeek
 # -------------------------------------------
 
-# Configura cliente OpenAI para DeepSeek (apenas se a chave for fornecida)
-deepseek_client = None
+# --- Configuração Global do Cliente OpenAI para DeepSeek (v1+ SDK) ---
+openai_configured = False
 if DEEPSEEK_API_KEY:
     try:
-        deepseek_client = OpenAI(
-            api_key=DEEPSEEK_API_KEY,
-            base_url="https://api.deepseek.com/v1" # URL base da API DeepSeek
-        )
-        print("Cliente DeepSeek (via OpenAI SDK) configurado com sucesso.")
+        openai.api_key = DEEPSEEK_API_KEY
+        openai.base_url = "https://api.deepseek.com/v1" # URL base da API DeepSeek
+        print("Cliente DeepSeek (via OpenAI SDK v1+) configurado com sucesso.")
+        openai_configured = True
     except Exception as e:
-        print(f"Erro ao configurar cliente DeepSeek: {e}")
-        deepseek_client = None # Garante que o cliente seja None se a configuração falhar
+        print(f"Erro ao configurar cliente DeepSeek globalmente: {e}")
+        # Não definimos openai = None, apenas controlamos com a flag
 else:
     print("Aviso: Variável de ambiente DEEPSEEK_API_KEY não definida. Análise da IA será pulada.")
+# ---------------------------------------------------------------------
 
 def format_conversation_to_text(chat_history, user_name="User"):
     """Formata o histórico do chat em uma string de texto simples."""
@@ -86,9 +86,9 @@ def save_conversation_to_file(conversation_text):
         return None
 
 def generate_deepseek_analysis(conversation_text):
-    """Gera análise usando DeepSeek com base no texto da conversa."""
-    if not deepseek_client:
-        return "AI analysis could not be performed. Configuration missing."
+    """Gera análise usando DeepSeek com base no texto da conversa (usando SDK v1+)."""
+    if not openai_configured:
+        return "AI analysis could not be performed. Configuration missing or failed."
 
     # Novo prompt conforme solicitado pelo usuário
     prompt = f"""(Based on the user responses in the following conversation log, what mistakes are they making, what could they improve, and subtly present a solution for some of their business problems? Within this solution, subtly introduce AI automations (without naming any specific AI tools) and explain how they would be beneficial for their business. Respond in English and with a maximum of 1000 characters.)
@@ -100,14 +100,15 @@ Conversation Log:
 """
 
     try:
-        print("\n--- Enviando requisição para DeepSeek ---")
-        response = deepseek_client.chat.completions.create(
+        print("\n--- Enviando requisição para DeepSeek (SDK v1+) ---")
+        # Usa a chamada atualizada para SDK v1+
+        response = openai.chat.completions.create(
             model="deepseek-chat", # Modelo de chat padrão do DeepSeek
             messages=[{"role": "user", "content": prompt}],
             max_tokens=350,  # Aproximação para ~1000 caracteres (ajustar se necessário)
             temperature=0.7,
         )
-        print("--- Resposta do DeepSeek recebida ---")
+        print("--- Resposta do DeepSeek recebida (SDK v1+) ---")
 
         ai_analysis_text = response.choices[0].message.content.strip()
 
@@ -118,7 +119,7 @@ Conversation Log:
         return ai_analysis_text
 
     except Exception as e:
-        print(f"Erro ao chamar API DeepSeek: {e}")
+        print(f"Erro ao chamar API DeepSeek (SDK v1+): {e}", exc_info=True) # Log detalhado
         return f"An error occurred during the AI analysis generation using DeepSeek. Error details: {html.escape(str(e))}"
 
 def send_email_notification(subject, text_body, attachment_path=None):
@@ -173,13 +174,13 @@ def send_email_notification(subject, text_body, attachment_path=None):
         print(f"Erro ao enviar email: {e}")
         return False
 
-@app.route('/')
+@app.route("/")
 def index():
     print(f"DEBUG: Servindo index.html de {app.static_folder}")
     # Usa app.static_folder que agora contém o caminho absoluto
     return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/<path:path>')
+@app.route("/<path:path>")
 def static_files(path):
     # Esta rota agora serve apenas arquivos da pasta static que são pedidos explicitamente
     # Ex: /intro_animation_logo.png
