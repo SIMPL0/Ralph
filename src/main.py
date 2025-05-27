@@ -143,7 +143,7 @@ Analysis:"""
                     "content": prompt # Envia o prompt completo com o histórico formatado
                 }
             ],
-            max_tokens=1000,
+            max_tokens=700,
             temperature=0.7,
         )
 
