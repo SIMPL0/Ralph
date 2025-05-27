@@ -32,7 +32,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com") # Email padrão do usuário
-OPENAI_API_KEY = "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" # TODO: Use environment variable for security
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Lê a chave da variável de ambiente
 # -------------------------------------------
 
 # --- Configuração Global do Cliente OpenAI para ChatGPT (v1+ SDK) ---
