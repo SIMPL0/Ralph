@@ -1,7 +1,5 @@
 Flask
 Flask-Cors
 gunicorn
-cohere
-
-
 openai
+fpdf2
