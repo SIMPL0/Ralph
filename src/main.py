@@ -306,12 +306,12 @@ def health_check():
     """Endpoint para verificar se o serviço está funcionando."""
     return jsonify({
         "status": "healthy",
-        "deepseek_configured": client is not None,
+        "openai_configured": client is not None,
         "email_configured": bool(EMAIL_SENDER and EMAIL_PASSWORD)
     })
 
 if __name__ == "__main__":
     print("Iniciando Flask app...")
-    print(f"DeepSeek configurado: {client is not None}")
+    print(f"OpenAI (ChatGPT) configurado: {client is not None}")
     print(f"Email configurado: {bool(EMAIL_SENDER and EMAIL_PASSWORD)}")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
