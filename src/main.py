@@ -4,335 +4,302 @@ import json
 import random
 import re
 import html
-import uuid # Para nomes de arquivo únicos
-from openai import OpenAI # Importa OpenAI corretamente para SDK v1+
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication # Para anexar arquivos
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from openai import OpenAI # Import OpenAI library
 
-# --- Determinar Caminhos Absolutos ---
-# Diretório onde main.py está localizado (src)
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-# Diretório raiz do projeto (um nível acima de src)
-PROJECT_ROOT = os.path.dirname(APP_DIR)
-# Caminho absoluto para a pasta static
-STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'static')
-print(f"DEBUG: Project Root: {PROJECT_ROOT}")
-print(f"DEBUG: Static Folder Path: {STATIC_FOLDER_PATH}")
-# -------------------------------------
+app = Flask(__name__)
+CORS(app) # Allow requests from the frontend
 
-app = Flask(__name__, static_folder=STATIC_FOLDER_PATH)
-CORS(app) # Permite requisições do frontend
-
-# --- Configuração de Variáveis de Ambiente ---
+# --- Configuration from Environment Variables ---
+# Securely load credentials and API keys from environment variables
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com") # Email padrão do usuário
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Lê a chave da variável de ambiente
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # -------------------------------------------
 
-# --- Configuração Global do Cliente OpenAI para ChatGPT (v1+ SDK) ---
-client = None
+# Initialize OpenAI client (only if key is provided)
+openai_client = None
 if OPENAI_API_KEY:
     try:
-        client = OpenAI(
-            api_key=OPENAI_API_KEY
-            # base_url é omitido para usar o padrão da OpenAI
-        )
-        print("Cliente OpenAI (ChatGPT) configurado com sucesso.")
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+        print("OpenAI client initialized successfully.")
     except Exception as e:
-        print(f"Erro ao configurar cliente OpenAI: {e}")
-        client = None
+        print(f"Error initializing OpenAI client: {e}")
+        openai_client = None # Ensure client is None if initialization fails
 else:
-    print("Aviso: Variável OPENAI_API_KEY não definida ou inválida. Análise da IA será pulada.")
-# ---------------------------------------------------------------------
+    print("Warning: OPENAI_API_KEY environment variable not set. AI analysis will be skipped.")
 
-def format_conversation_to_text(chat_history, user_name="User", profile="unknown"):
-    """Formata o histórico do chat em uma string de texto simples."""
-    text_log = f"Real Estate Business Analysis for {user_name}\n"
-    text_log += f"Profile: {profile.title()}\n"
-    text_log += "="*50 + "\n\n"
-    
-    for i, msg in enumerate(chat_history):
-        sender = msg.get("sender")
-        content = msg.get("content", "(empty)")
-        # Remove HTML simples que pode vir do frontend
-        clean_content = re.sub("<.*?>", "", content).strip()
-        if not clean_content or "To start, please tell me" in clean_content:
-            continue # Pula mensagens vazias ou de seleção de perfil
-
-        if sender == "bot":
-            text_log += f"Ralph (AI): {clean_content}\n\n"
-        elif sender == "user":
-            text_log += f"{user_name}: {clean_content}\n\n"
-        
-        text_log += "-" * 30 + "\n\n"
-    
-    return text_log
-
-def save_conversation_to_file(conversation_text):
-    """Salva a string da conversa em um arquivo TXT temporário."""
+def format_currency(value):
+    """Helper to format numbers as currency (e.g., $1,234.56). Placeholder.
+       Actual currency detection/formatting might need more context.
+    """
     try:
-        # Usa diretório temporário do sistema
-        import tempfile
-        temp_dir = tempfile.gettempdir()
-        
-        filename = f"ralph_conversation_{uuid.uuid4().hex[:8]}.txt"
-        filepath = os.path.join(temp_dir, filename)
-        
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(conversation_text)
-        
-        print(f"Conversa salva em: {filepath}")
-        return filepath
-    except Exception as e:
-        print(f"Erro ao salvar arquivo de conversa: {e}")
-        return None
+        # Basic check if it looks like a number
+        num_value = float(re.sub(r"[^0-9.]", "", str(value)))
+        return f"${num_value:,.2f}" # Simple USD formatting
+    except ValueError:
+        return str(value) # Return original string if not easily convertible
 
-def generate_chatgpt_analysis(chat_history, profile, user_name="User"):
-    """Gera análise usando ChatGPT com base no histórico de chat formatado como texto."""
-    if not client:
-        return "AI analysis could not be performed. OpenAI API configuration missing or failed."
+def generate_ai_enhanced_diagnosis(data):
+    """Generates an enhanced diagnosis using OpenAI based on conversation data."""
+    if not openai_client:
+        return "<div class=\"diagnosis-box\"><p><em>AI analysis could not be performed. Configuration missing.</em></p></div>"
 
-    # --- Formatar histórico como texto único (como na versão antiga) ---
-    conversation_text = format_conversation_to_text(chat_history, user_name, profile)
-    # -----------------------------------------------------------------
+    user_name = data.get("userName", "User")
+    business_name = data.get("businessName", "their business")
+    business_type = data.get("businessType", "real estate business")
+    role = data.get("role", "")
+    questions_data = data.get("questions", [])
+    # images_data = data.get("images", []) # Image data available if needed for future analysis
 
-    # --- Preparar Prompt para a API OpenAI (estilo antigo) ---
-    profile_context = {
-        'individual': 'independent real estate agent',
-        'employee': 'real estate company employee',
-        'owner': 'real estate business owner'
-    }
-    context = profile_context.get(profile, 'real estate professional')
+    # Prepare context for AI
+    context = f"User Name: {user_name}\n"
+    if data.get("companyName"): context += f"Company Name: {data['companyName']}\n"
+    if business_name != "their business": context += f"Business Name: {business_name}\n"
+    context += f"Business Type: {business_type}\n"
+    if role: context += f"Role: {role}\n\n"
+    context += "User Responses:\n"
+    for item in questions_data:
+        question = item.get("question", "Q").replace("\n", " ")
+        answer = item.get("answer", "A").replace("\n", " ")
+        context += f"- Q: {question}\n  A: {answer}\n"
 
-    prompt = f"""You are Ralph, an AI business analyst specializing in real estate. Based on the conversation below with a {context} named {user_name}, provide a comprehensive business analysis.
+    # Construct the prompt for OpenAI
+    prompt = f"""
+    Analyze the following real estate business information provided by {user_name} regarding {business_name}.
+    The user's role is '{role}' within a '{business_type}' context.
 
-Your analysis should include:
-1. Current business strengths and weaknesses identified from the conversation.
-2. Key areas for improvement based on the conversation.
-3. Specific actionable recommendations derived from the conversation.
-4. How AI automation could solve their biggest pain points mentioned in the conversation (without naming specific tools).
-5. Potential ROI and efficiency gains from implementing your suggestions.
+    User Input:
+    {context}
 
-Keep the tone professional yet conversational, as if you're their personal business consultant. Limit response to 800 words maximum. Structure the output clearly.
+    Based *only* on the information provided, generate a concise business analysis report in English, formatted in HTML. Follow these instructions precisely:
 
-Conversation Data:
-{conversation_text}
-
-Analysis:"""
-    # ---------------------------------------------------------
+    1.  **Overall Tone:** Professional, insightful, and subtly encouraging towards optimization, especially via automation/technology, but avoid direct sales pitches.
+    2.  **Structure:**
+        *   A main title: `<h3>Personalized Business Snapshot for {user_name}</h3>`
+        *   A brief introductory sentence.
+        *   Section: `<h4>Key Strengths Observed:</h4>` (Use bullet points `<li>` for 2-3 positive aspects inferred from the answers. If none are clear, state that more data might be needed).
+        *   Section: `<h4>Areas for Potential Optimization:</h4>` (Use bullet points `<li>` for 2-4 areas where the user indicated challenges, high costs, time sinks, or lack of tools/processes).
+        *   Section: `<h4>Financial Insights (Based on Input):</h4>`
+            *   Identify any mentioned costs or expenses. Present them clearly. If specific numbers are mentioned, wrap them in `<span style='color: #dc3545; font-weight: bold;'>` (e.g., `<span style='color: #dc3545; font-weight: bold;'>$500/month</span> on marketing`). Use the color red (#dc3545).
+            *   Identify potential savings if implied (e.g., reducing time on manual tasks). Frame these as opportunities, wrap potential savings figures or time estimates in `<span style='color: #28a745; font-weight: bold;'>` (e.g., `potential time savings of <span style='color: #28a745; font-weight: bold;'>5-10 hours/week</span>`). Use the color green (#28a745).
+            *   If possible, estimate cost percentages *if* enough data is provided (e.g., "Marketing costs appear to be around X% of mentioned expenses"). If not possible, omit this.
+        *   Section: `<h4>Strategic Considerations:</h4>`
+            *   Provide 1-2 concise recommendations based on the strengths and optimization areas.
+            *   Subtly weave in the benefit of automation/AI/technology. Example: "Leveraging CRM tools could streamline client follow-up, potentially saving <span style='color: #28a745; font-weight: bold;'>valuable hours</span> weekly." or "Exploring automated marketing solutions could optimize the <span style='color: #dc3545; font-weight: bold;'>$XXX</span> budget mentioned."
+    3.  **Formatting:** Use simple HTML tags (`<h3>`, `<h4>`, `<ul>`, `<li>`, `<p>`, `<strong>`, `<em>`, `<br>`, `<span>` for colors). Do NOT include `<html>`, `<head>`, or `<body>` tags. Wrap the entire response in a single `<div class="diagnosis-box">`.
+    4.  **Language:** English. Keep it concise and easy to read. Focus on actionable insights derived *directly* from the user's input.
+    5.  **Constraint:** Do NOT invent information not present in the user's answers. If specific numbers aren't given, talk conceptually about costs or savings.
+    """
 
     try:
-        print("\n--- Enviando requisição para OpenAI API com prompt único ---")
-        # print(f"DEBUG: Prompt enviado (início): {prompt[:500]}...") # Descomentar para depuração
-
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo", # Modelo OpenAI
+        print("\n--- Sending request to OpenAI ---")
+        # print(f"Prompt: {prompt[:500]}...") # Log prompt start for debugging
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo", # Or use "gpt-4" if available/preferred
             messages=[
-                {
-                    "role": "system",
-                    "content": f"You are Ralph, an expert AI business analyst for real estate professionals. Provide actionable, specific advice based on the conversation data provided by the user ({context})."
-                },
-                {
-                    "role": "user",
-                    "content": prompt # Envia o prompt completo com o histórico formatado
-                }
+                {"role": "system", "content": "You are an expert business analyst specializing in the real estate sector. Generate concise, actionable HTML reports based on user inputs."},
+                {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
-            temperature=0.7,
+            temperature=0.5, # Slightly creative but mostly factual
+            max_tokens=600 # Adjust token limit as needed
         )
+        print("--- OpenAI response received ---")
 
-        print("--- Resposta da OpenAI API recebida ---")
+        ai_diagnosis_html = completion.choices[0].message.content
 
-        ai_analysis_text = response.choices[0].message.content.strip()
+        # Basic validation/cleanup
+        if not ai_diagnosis_html.strip().startswith('<div class="diagnosis-box">'):
+             ai_diagnosis_html = f'<div class="diagnosis-box">{ai_diagnosis_html}</div>' # Ensure it's wrapped
 
-        if not ai_analysis_text:
-            # Se a resposta ainda vier vazia, pode ser outro problema (ex: API key, fundos, filtro de conteúdo)
-            return "Analysis could not be generated. Empty response received from API."
+        # Add a small disclaimer
+        ai_diagnosis_html += "<p style='font-size: 0.8em; color: #6c757d; margin-top: 15px;'><em>Disclaimer: This AI-generated analysis is based on the provided information and aims to highlight potential areas. A comprehensive business strategy requires deeper consultation.</em></p>"
 
-        # Adiciona assinatura do Ralph
-        ai_analysis_text += "\n\n---\nAnalysis generated by Ralph AI\nReal Estate Business Consultant"
-
-        return ai_analysis_text
+        return ai_diagnosis_html
 
     except Exception as e:
-        print(f"Erro ao chamar API OpenAI: {e}")
-        # Verifica se o erro é de autenticação (pode indicar chave inválida)
-        if "authentication" in str(e).lower():
-             error_msg = f"Error generating AI analysis: Authentication failed. Please check your OpenAI API key configuration. ({str(e)})"
-        # Verifica se o erro é de saldo (rate limit / quota)
-        elif "quota" in str(e).lower() or "limit" in str(e).lower() or "insufficient_quota" in str(e).lower():
-             error_msg = f"Error generating AI analysis: API quota exceeded or insufficient funds. Please check your OpenAI account billing. ({str(e)})"
-        else:
-             error_msg = f"Error generating AI analysis: An unexpected error occurred. ({str(e)})"
-        return error_msg
+        print(f"Error calling OpenAI API: {e}")
+        # Fallback to a simpler message if AI fails
+        return f"<div class=\"diagnosis-box\"><p><strong>Analysis Report for {html.escape(user_name)}</strong></p><p>We received your information about {html.escape(business_name)}. An error occurred during the AI-powered analysis generation. However, your data has been recorded.</p><p><em>Common areas real estate professionals focus on include lead generation, client follow-up, and time management. Exploring tools and strategies in these areas can often yield significant improvements.</em></p><p><em>Error details: {html.escape(str(e))}</em></p></div>"
 
-def send_email_notification(subject, text_body, attachment_path=None):
-    """Envia um email com anexo opcional."""
-    if not all([EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER]):
-        print("Configuração de email incompleta. Pulando notificação por email.")
+def send_email_notification(subject, html_body):
+    """Sends an email using configured SMTP settings."""
+    if not all([EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, SMTP_SERVER]):
+        print("Email configuration incomplete. Skipping email notification.")
         return False
 
+    message = MIMEMultipart()
+    message["From"] = EMAIL_SENDER
+    message["To"] = EMAIL_RECEIVER
+    message["Subject"] = subject
+    message.attach(MIMEText(html_body, "html", "utf-8"))
+
     try:
-        message = MIMEMultipart()
-        message["From"] = EMAIL_SENDER
-        message["To"] = EMAIL_RECEIVER
-        message["Subject"] = subject
-
-        # Anexa o corpo do texto
-        message.attach(MIMEText(text_body, "plain", "utf-8"))
-
-        # Anexa o arquivo TXT, se fornecido
-        if attachment_path and os.path.exists(attachment_path):
-            with open(attachment_path, "rb") as attachment:
-                part = MIMEApplication(attachment.read(), Name=os.path.basename(attachment_path))
-            part["Content-Disposition"] = f"attachment; filename=\"{os.path.basename(attachment_path)}\""
-            message.attach(part)
-            print(f"Anexo {os.path.basename(attachment_path)} adicionado ao email.")
-
-        print(f"Conectando ao servidor SMTP: {SMTP_SERVER}:{SMTP_PORT}")
+        print(f"Connecting to SMTP server: {SMTP_SERVER}:{SMTP_PORT}")
+        # Use starttls for port 587
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
+        server.ehlo() # Extended Hello
+        server.starttls() # Start TLS encryption
+        server.ehlo() # Re-identify after TLS
+        print("Logging into email account...")
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        
+        print("Sending email...")
         server.sendmail(EMAIL_SENDER, EMAIL_RECEIVER, message.as_string())
         server.quit()
-        
-        print(f"Email enviado com sucesso para {EMAIL_RECEIVER}")
-        
-        # Remove arquivo temporário
-        if attachment_path and os.path.exists(attachment_path):
-            try:
-                os.remove(attachment_path)
-                print(f"Arquivo temporário removido: {attachment_path}")
-            except Exception as e:
-                print(f"Erro ao remover arquivo temporário: {e}")
-                
+        print(f"Email sent successfully to {EMAIL_RECEIVER}")
         return True
-        
-    except Exception as e:
-        print(f"Erro ao enviar email: {e}")
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"SMTP Authentication Error: {e}. Check email/password (App Password?).")
         return False
-
-@app.route("/")
-def index():
-    print(f"DEBUG: Servindo index.html de {app.static_folder}")
-    return send_from_directory(app.static_folder, 'index.html')
-
-@app.route("/<path:path>")
-def static_files(path):
-    print(f"DEBUG: Servindo arquivo estático '{path}' de {app.static_folder}")
-    file_path = os.path.join(app.static_folder, path)
-    if os.path.isfile(file_path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        print(f"WARN: Arquivo estático não encontrado: {file_path}")
-        return jsonify({"error": "Static file not found"}), 404
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
 
 @app.route("/analyze", methods=["POST"])
 def analyze_data():
-    """Recebe dados, salva conversa, gera análise IA (ChatGPT), envia email, retorna análise."""
-    print("=== DEBUG: Iniciando processo de análise ===")
-    
+    """Receives data, generates AI diagnosis, sends email, returns diagnosis to frontend."""
     try:
-        # Verificar se recebeu dados JSON
-        if not request.is_json:
-            print("ERROR: Request não é JSON")
-            return jsonify({"error": "Request must be JSON"}), 400
-            
-        data = request.get_json()
+        data = request.json
         if not data:
-            print("ERROR: Nenhum dado JSON recebido")
             return jsonify({"error": "No data received"}), 400
 
-        print(f"DEBUG: Dados recebidos: {list(data.keys())}")
+        # Log received data (excluding potentially large image data)
+        log_data = {k: v for k, v in data.items() if k != 'images'}
+        print("Received data for analysis:", json.dumps(log_data, indent=2))
 
         user_name = data.get("userName", "User")
-        profile = data.get("profile", "unknown")
-        chat_history = data.get("chatHistory", [])
+        company_name = data.get("companyName", "")
+        business_name = data.get("businessName", "their business")
+        business_type = data.get("businessType", "N/A")
+        role = data.get("role", "N/A")
+        chat_history = data.get("chatHistory", []) # Full chat history
+        questions_answers = data.get("questions", []) # Just Q&A pairs
 
-        print(f"DEBUG: user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
+        # --- Generate AI Diagnosis --- 
+        ai_diagnosis_html = generate_ai_enhanced_diagnosis(data)
+        # -----------------------------
 
-        if not chat_history:
-            print("ERROR: Histórico de chat vazio")
-            return jsonify({"error": "Chat history is empty"}), 400
-
-        # --- Formatar e Salvar Conversa (para email) --- 
-        print("DEBUG: Formatando conversa para email...")
-        conversation_text_for_email = format_conversation_to_text(chat_history, user_name, profile)
-        print(f"DEBUG: Texto da conversa para email criado ({len(conversation_text_for_email)} caracteres)")
-        
-        conversation_filepath = save_conversation_to_file(conversation_text_for_email)
-        print(f"DEBUG: Arquivo para email salvo em: {conversation_filepath}")
-
-        # --- Gerar Análise IA (ChatGPT - usando prompt único) --- 
-        print("DEBUG: Iniciando análise IA...")
-        if not client:
-            ai_analysis_text = "AI analysis unavailable - OpenAI API not configured properly."
-            print("WARN: Cliente OpenAI não configurado")
+        # --- Prepare Email Content --- 
+        subject_prefix = "Ralph Analysis Completed"
+        subject_identifier = f"{user_name}"
+        if company_name:
+            subject_identifier += f" - {company_name}"
+        elif business_name != "their business":
+             subject_identifier += f" - {business_name}"
         else:
-            # Passa chat_history, profile e user_name para a função
-            ai_analysis_text = generate_chatgpt_analysis(chat_history, profile, user_name)
-            print(f"DEBUG: Análise gerada ({len(ai_analysis_text)} caracteres)")
+             subject_identifier += f" ({business_type})"
+        email_subject = f"{subject_prefix}: {subject_identifier}"
 
-        # Verificar se a análise foi gerada ou se houve erro específico da API
-        if not ai_analysis_text or "Error generating AI analysis:" in ai_analysis_text:
-            # Se a análise falhou (seja por erro ou resposta vazia), usa uma mensagem padrão
-            # A mensagem de erro específica já foi logada dentro de generate_chatgpt_analysis
-            analysis_result_text = f"Analysis could not be generated at this time. Please try again later. If the problem persists, check the server logs or contact support. (Details: {ai_analysis_text})"
-            print(f"WARN: Análise falhou ou vazia, usando mensagem padrão. Detalhes: {ai_analysis_text}")
+        # Build HTML email body
+        email_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{html.escape(email_subject)}</title>
+<style>
+  body {{ font-family: sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f7f6; }}
+  .container {{ max-width: 800px; margin: 20px auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
+  h1 {{ color: #100f0f; border-bottom: 2px solid #100f0f; padding-bottom: 10px; margin-top: 0; }}
+  h2 {{ color: #333; margin-top: 30px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }}
+  .info-section p {{ margin: 6px 0; font-size: 0.95em; }}
+  .info-section strong {{ color: #100f0f; min-width: 120px; display: inline-block; }}
+  .chat-log {{ margin-top: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #fdfdfd; padding: 15px; max-height: 700px; overflow-y: auto; font-size: 0.9em; }}
+  .chat-message {{ margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; word-wrap: break-word; }}
+  .bot-message {{ background-color: #f0f0f0; border-left: 4px solid #555; }}
+  .user-message {{ background-color: #e6f7ff; border-left: 4px solid #100f0f; }}
+  .message-sender {{ font-weight: bold; margin-bottom: 5px; display: block; color: #100f0f; }}
+  /* Hide buttons and other interactive elements in email */
+  .message-content button, .business-type-selector {{ display: none !important; }}
+  .diagnosis-box {{ margin-top: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; }}
+  .diagnosis-box h3 {{ color: #100f0f; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; }}
+  .diagnosis-box h4 {{ color: #333; margin-top: 20px; margin-bottom: 10px; }}
+  .diagnosis-box ul {{ list-style: disc; padding-left: 25px; margin-top: 5px; }}
+  .diagnosis-box li {{ margin-bottom: 8px; }}
+  .diagnosis-positive {{ color: #28a745; font-weight: bold; }}
+  .diagnosis-negative {{ color: #dc3545; font-weight: bold; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Ralph Real Estate Analysis Report</h1>
+  <div class="info-section">
+      <h2>User Information</h2>
+      <p><strong>Name:</strong> {html.escape(user_name)}</p>
+      <p><strong>Business Type:</strong> {html.escape(business_type.replace('_', ' ').title())}</p>
+      {f'<p><strong>Company Name:</strong> {html.escape(company_name)}</p>' if company_name else ''}
+      {f'<p><strong>Business Name:</strong> {html.escape(business_name)}</p>' if business_name != "their business" else ''}
+      {f'<p><strong>Role:</strong> {html.escape(role)}</p>' if role else ''}
+  </div>
+
+  <h2>Full Conversation Log:</h2>
+  <div class="chat-log">
+"""
+        if chat_history:
+            for msg in chat_history:
+                sender = msg.get("sender")
+                content = msg.get("content", "(empty)")
+                # Sanitize HTML content from bot messages for email
+                # Basic approach: remove script tags, keep structure
+                # A more robust sanitizer might be needed for complex HTML
+                safe_content = re.sub(r'<script.*?</script>', '', content, flags=re.IGNORECASE | re.DOTALL)
+                # Remove diagnosis box from chat history in email to avoid duplication
+                safe_content = re.sub(r'<div class=\"diagnosis-box.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
+                # Remove button selectors
+                safe_content = re.sub(r'<div class=\"business-type-selector.*?</div>', '', safe_content, flags=re.DOTALL | re.IGNORECASE)
+
+                if sender == "bot":
+                    email_body += f"<div class='chat-message bot-message'><span class='message-sender'>Ralph (Bot):</span><div class='message-content'>{safe_content}</div></div>"
+                elif sender == "user":
+                    # User content is plain text, just escape it
+                    email_body += f"<div class='chat-message user-message'><span class='message-sender'>{html.escape(user_name)}:</span><div class='message-content'>{html.escape(content)}</div></div>"
         else:
-            analysis_result_text = ai_analysis_text # Usa o texto da análise bem-sucedida
+            email_body += "<p><em>No chat history was recorded.</em></p>"
+        email_body += """  </div>
 
-        # --- Enviar Email (em background, não bloqueia resposta) --- 
-        try:
-            email_subject = f"Ralph Analysis - {user_name} ({profile})"
-            # Usa o texto formatado para o corpo do email, não a análise bruta
-            email_body = f"New analysis completed for {user_name} ({profile}).\n\nConversation log attached.\n\n--- Generated Analysis ---\n{analysis_result_text}"
-            send_email_notification(email_subject, email_body, conversation_filepath)
-        except Exception as email_error:
-            print(f"WARN: Erro no envio de email (não crítico): {email_error}")
+  <h2>AI-Generated Analysis:</h2>
+"""
+        # Append the AI diagnosis HTML directly
+        email_body += ai_diagnosis_html
+        email_body += """</div>
+</body>
+</html>"""
+        # -----------------------------
 
-        # --- Retornar Resposta --- 
-        # Retorna o resultado da análise (ou a mensagem de erro formatada)
-        response_data = {
-            "analysis_text": analysis_result_text,
-            "status": "success" if "Error generating AI analysis:" not in analysis_result_text else "error"
-        }
-        
-        print(f"DEBUG: Retornando análise/status: {response_data['status']}")
-        return jsonify(response_data), 200
+        # --- Send Email Notification (Silently) ---
+        send_email_notification(email_subject, email_body)
+        # -----------------------------------------
+
+        # --- Return AI Diagnosis to Frontend --- 
+        # The frontend expects a JSON with 'diagnosis_html'
+        return jsonify({"diagnosis_html": ai_diagnosis_html})
+        # ---------------------------------------
 
     except Exception as e:
-        print(f"ERROR CRÍTICO no endpoint /analyze: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        error_response = {
-            "analysis_text": f"Sorry, a critical error occurred while processing your analysis. Please try again. If the problem persists, contact support.\n\nError details: {str(e)[:200]}",
-            "status": "error"
-        }
-        return jsonify(error_response), 500
-
-@app.route("/health")
-def health_check():
-    """Endpoint para verificar se o serviço está funcionando."""
-    return jsonify({
-        "status": "healthy",
-        "openai_configured": client is not None,
-        "email_configured": bool(EMAIL_SENDER and EMAIL_PASSWORD)
-    })
+        print(f"Error in /analyze endpoint: {e}")
+        # Provide a generic error message to the frontend
+        error_html = f"<div class=\"diagnosis-box\"><p>An unexpected error occurred while processing your request. Please try again later. Details: {html.escape(str(e))}</p></div>"
+        # Also attempt to send an error email
+        try:
+            error_subject = f"ERROR in Ralph Analysis: {user_name}"
+            error_body = f"<h1>Error occurred during analysis</h1><p>User: {html.escape(user_name)}</p><p>Error: {html.escape(str(e))}</p><hr><p>Received Data:</p><pre>{html.escape(json.dumps(log_data, indent=2))}</pre>"
+            send_email_notification(error_subject, error_body)
+        except Exception as email_err:
+            print(f"Failed to send error email: {email_err}")
+            
+        return jsonify({"diagnosis_html": error_html}), 500
 
 if __name__ == "__main__":
-    print("Iniciando Flask app...")
-    print(f"OpenAI (ChatGPT) configurado: {client is not None}")
-    print(f"Email configurado: {bool(EMAIL_SENDER and EMAIL_PASSWORD)}")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
+    # Use Gunicorn or another WSGI server in production
+    # For local testing:
+    # app.run(debug=True, host='0.0.0.0', port=5000)
+    # For Render, Gunicorn command will be used (e.g., gunicorn --bind 0.0.0.0:$PORT src.main:app)
+    # The port is usually set by Render via the $PORT environment variable.
+    port = int(os.environ.get("PORT", 5000)) 
+    app.run(host='0.0.0.0', port=port)
 
