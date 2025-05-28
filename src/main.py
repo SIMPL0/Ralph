@@ -32,16 +32,13 @@ print(f"DEBUG: PDF Folder Path: {PDF_FOLDER}")
 # -------------------------------------
 
 app = Flask(__name__, static_folder=STATIC_FOLDER_PATH)
-# Configuração de CORS mais específica para permitir requisições do frontend
-CORS(app, resources={r"/*": {"origins": ["https://ralph-1.onrender.com", "http://localhost:*"], 
-                            "methods": ["GET", "POST", "OPTIONS"],
-                            "allow_headers": ["Content-Type", "Authorization"]}},
-     supports_credentials=True)
+# Configuração de CORS para permitir qualquer origem
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Configuração de Variáveis de Ambiente ---
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+EMAIL_SENDER = os.getenv("EMAIL_SENDER", "simploai.ofc@gmail.com")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com") # Email padrão do Simplo
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # Lê a chave da variável de ambiente
@@ -626,12 +623,16 @@ def submit_email():
         # Verificar se recebeu dados JSON
         if not request.is_json:
             print("ERROR: Request não é JSON")
-            return jsonify({"error": "Request must be JSON"}), 400
+            response = jsonify({"error": "Request must be JSON"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
             
         data = request.get_json()
         if not data:
             print("ERROR: Nenhum dado JSON recebido")
-            return jsonify({"error": "No data received"}), 400
+            response = jsonify({"error": "No data received"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
 
         user_email = data.get("email")
         user_name = data.get("userName", "User")
@@ -642,11 +643,15 @@ def submit_email():
 
         if not user_email:
             print("ERROR: Email não fornecido")
-            return jsonify({"error": "Email is required"}), 400
+            response = jsonify({"error": "Email is required"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
 
         if not chat_history:
             print("ERROR: Histórico de chat vazio")
-            return jsonify({"error": "Chat history is empty"}), 400
+            response = jsonify({"error": "Chat history is empty"})
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 400
 
         # Inicia o processo de geração e envio do PDF em segundo plano
         # (Na prática, isso seria feito com uma tarefa assíncrona, mas para simplificar, fazemos aqui)

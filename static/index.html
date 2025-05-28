@@ -301,10 +301,10 @@
             
             <!-- Formulário de Email (inicialmente oculto) - Melhorado -->
             <div id="emailForm" class="email-form">
-                <div class="email-form-title">Receba seu relatório detalhado em PDF</div>
+                <div class="email-form-title">Get your detailed PDF report</div>
                 <div class="email-form-container">
-                    <input type="email" id="userEmail" placeholder="Digite seu endereço de email" required>
-                    <button id="submitEmailBtn">Obter Relatório Completo</button>
+                    <input type="email" id="userEmail" placeholder="Enter your email address" required>
+                    <button id="submitEmailBtn">Get Detailed PDF Report</button>
                 </div>
             </div>
             
@@ -532,7 +532,7 @@
                 // Identifica possíveis seções no texto
                 const sections = [];
                 let currentSection = "";
-                let currentTitle = "Análise de Negócio";
+                let currentTitle = "Business Analysis";
                 
                 // Divide o texto em linhas
                 const lines = text.split('\n');
@@ -546,7 +546,7 @@
                                            (i === lines.length-1 || lines[i+1].trim() === '');
                     
                     // Verifica se é um marcador de seção explícito
-                    const isExplicitSection = /^(pontos fortes|áreas de melhoria|recomendações|oportunidades|conclusão|strengths|areas|recommendations|opportunities|conclusion)/i.test(line);
+                    const isExplicitSection = /^(strengths|areas|recommendations|opportunities|conclusion)/i.test(line);
                     
                     if ((isPotentialTitle || isExplicitSection) && currentSection.trim()) {
                         // Salva a seção anterior
@@ -566,7 +566,7 @@
                         });
                         
                         // Reseta para próxima seção
-                        currentTitle = "Conclusão";
+                        currentTitle = "Conclusion";
                         currentSection = "";
                     } else {
                         // Adiciona linha à seção atual
@@ -609,7 +609,7 @@
             messageDiv.innerHTML = `
                 <div class="avatar">R</div>
                 <div class="message-content">
-                    <p>Aqui está a análise do seu negócio imobiliário:</p>
+                    <p>Here is your real estate business analysis:</p>
                     <div class="analysis-text">${formattedHtml}</div>
                 </div>
             `;
