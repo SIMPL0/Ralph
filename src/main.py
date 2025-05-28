@@ -32,7 +32,11 @@ print(f"DEBUG: PDF Folder Path: {PDF_FOLDER}")
 # -------------------------------------
 
 app = Flask(__name__, static_folder=STATIC_FOLDER_PATH)
-CORS(app) # Permite requisições do frontend
+# Configuração de CORS mais específica para permitir requisições do frontend
+CORS(app, resources={r"/*": {"origins": ["https://ralph-1.onrender.com", "http://localhost:*"], 
+                            "methods": ["GET", "POST", "OPTIONS"],
+                            "allow_headers": ["Content-Type", "Authorization"]}},
+     supports_credentials=True)
 
 # --- Configuração de Variáveis de Ambiente ---
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -375,15 +379,10 @@ def generate_pdf_report_with_ai_content(chat_history, profile, user_name="User")
                 pdf.chapter_title(title)
                 pdf.chapter_body(content)
         
-        # Adiciona disclaimer
-        pdf.set_font("Helvetica", "I", 8)
-        pdf.set_text_color(150, 150, 150)
-        pdf.multi_cell(0, 5, "This analysis is based on the information provided during our conversation and is intended as general business advice. Results may vary based on implementation and market conditions.")
-        
         # Salva o PDF
         pdf.output(pdf_path)
         
-        print(f"PDF gerado com sucesso: {pdf_path}")
+        print(f"DEBUG: PDF gerado com sucesso: {pdf_path}")
         return pdf_path, pdf_filename
         
     except Exception as e:
@@ -392,152 +391,110 @@ def generate_pdf_report_with_ai_content(chat_history, profile, user_name="User")
         traceback.print_exc()
         return None, None
 
-def send_email_with_pdf(recipient_email, user_name, profile, pdf_path, send_copy_to_simplo=True):
-    """Envia um email com o PDF anexado para o usuário e opcionalmente para o Simplo."""
-    if not pdf_path or not os.path.exists(pdf_path):
-        print(f"ERRO: PDF não encontrado em {pdf_path}")
-        return False
-        
-    try:
-        # Prepara o email para o usuário
-        subject = f"Your Ralph Business Analysis Report"
-        
-        # Corpo do email para o usuário
-        body = f"""Hello {user_name},
-
-Thank you for chatting with Ralph, your Real Estate Business Analyst.
-
-Attached is your personalized business analysis report based on our conversation. This report includes:
-
-• Executive summary of your business situation
-• Analysis of your business strengths
-• Key areas for improvement
-• Actionable recommendations
-• Automation opportunities to improve efficiency
-• Potential ROI from implementing our suggestions
-
-We hope you find this analysis valuable for your real estate business.
-
-Best regards,
-Ralph AI
-Real Estate Business Consultant
-"""
-        
-        # Envia o email para o usuário
-        success = send_email_notification(
-            subject=subject,
-            text_body=body,
-            attachment_path=pdf_path,
-            recipient_email=recipient_email
-        )
-        
-        if not success:
-            print(f"ERRO: Falha ao enviar email para {recipient_email}")
-            return False
-            
-        # Envia uma cópia para o Simplo, se solicitado
-        if send_copy_to_simplo and EMAIL_RECEIVER:
-            # Corpo do email para o Simplo
-            simplo_body = f"""New Ralph Analysis Report
-
-User: {user_name}
-Profile: {profile}
-Email: {recipient_email}
-Date: {datetime.now().strftime('%B %d, %Y')}
-
-The user's analysis report is attached.
-"""
-            
-            # Envia o email para o Simplo
-            send_email_notification(
-                subject=f"[COPY] Ralph Analysis - {user_name} ({profile})",
-                text_body=simplo_body,
-                attachment_path=pdf_path,
-                recipient_email=EMAIL_RECEIVER
-            )
-            
-        return True
-        
-    except Exception as e:
-        print(f"Erro ao enviar email com PDF: {e}")
-        return False
-
-def send_email_notification(subject, text_body, attachment_path=None, recipient_email=None):
-    """Envia um email com anexo opcional."""
+def send_email_notification(subject, text_body, recipient_email, attachment_path=None):
+    """Envia um email de notificação simples, opcionalmente com anexo."""
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
-        print("Configuração de email incompleta. Pulando notificação por email.")
+        print("WARN: Credenciais de email não configuradas. Pulando envio.")
         return False
         
-    # Se não for especificado um destinatário, usa o padrão
-    if not recipient_email:
-        recipient_email = EMAIL_RECEIVER
-        
-    if not recipient_email:
-        print("Email do destinatário não especificado. Pulando notificação por email.")
-        return False
-
     try:
-        message = MIMEMultipart()
-        message["From"] = EMAIL_SENDER
-        message["To"] = recipient_email
-        message["Subject"] = subject
-
-        # Anexa o corpo do texto
-        message.attach(MIMEText(text_body, "plain", "utf-8"))
-
-        # Anexa o arquivo, se fornecido
+        # Cria a mensagem
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
+        
+        # Adiciona o corpo do email
+        msg.attach(MIMEText(text_body, 'plain'))
+        
+        # Adiciona anexo, se fornecido
         if attachment_path and os.path.exists(attachment_path):
-            with open(attachment_path, "rb") as attachment:
-                part = MIMEApplication(attachment.read(), Name=os.path.basename(attachment_path))
-            part["Content-Disposition"] = f"attachment; filename=\"{os.path.basename(attachment_path)}\""
-            message.attach(part)
-            print(f"Anexo {os.path.basename(attachment_path)} adicionado ao email.")
-
-        print(f"Conectando ao servidor SMTP: {SMTP_SERVER}:{SMTP_PORT}")
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            with open(attachment_path, 'rb') as file:
+                attachment = MIMEApplication(file.read(), Name=os.path.basename(attachment_path))
+                attachment['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+                msg.attach(attachment)
         
-        server.sendmail(EMAIL_SENDER, recipient_email, message.as_string())
-        server.quit()
-        
+        # Conecta ao servidor SMTP e envia
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.send_message(msg)
+            
         print(f"Email enviado com sucesso para {recipient_email}")
-        
-        # Não remove o arquivo PDF, pois pode ser necessário para outros emails
-        # Será removido automaticamente pelo sistema operacional quando o servidor for reiniciado
-                
         return True
         
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
         return False
 
-@app.route("/")
-def index():
-    print(f"DEBUG: Servindo index.html de {app.static_folder}")
-    return send_from_directory(app.static_folder, 'index.html')
+def send_email_with_pdf(recipient_email, user_name, profile, pdf_path, send_copy_to_simplo=True):
+    """Envia o relatório PDF por email para o usuário e opcionalmente para o Simplo."""
+    if not EMAIL_SENDER or not EMAIL_PASSWORD:
+        print("WARN: Credenciais de email não configuradas. Pulando envio.")
+        return False
+        
+    try:
+        # Verifica se o PDF existe
+        if not os.path.exists(pdf_path):
+            print(f"ERRO: PDF não encontrado em {pdf_path}")
+            return False
+            
+        # Prepara o email para o usuário
+        subject = f"Your Real Estate Business Analysis from Ralph AI"
+        
+        # Corpo do email personalizado
+        body = f"""Hello {user_name},
 
-@app.route("/<path:path>")
-def static_files(path):
-    print(f"DEBUG: Servindo arquivo estático '{path}' de {app.static_folder}")
-    file_path = os.path.join(app.static_folder, path)
-    if os.path.isfile(file_path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        print(f"WARN: Arquivo estático não encontrado: {file_path}")
-        return jsonify({"error": "Static file not found"}), 404
+Thank you for using Ralph AI to analyze your real estate business. Attached is your detailed business analysis report.
 
-@app.route("/reports/<path:filename>")
-def serve_report(filename):
-    """Serve os relatórios PDF gerados."""
-    return send_from_directory(PDF_FOLDER, filename)
+This report includes:
+- Executive summary of your business situation
+- Key strengths identified
+- Areas for improvement
+- Actionable recommendations
+- Automation opportunities
+- Potential ROI from implementing recommendations
+
+We hope this analysis helps you optimize your real estate business operations and increase your success.
+
+Best regards,
+Ralph AI
+Real Estate Business Consultant
+
+---
+This is an automated message. Please do not reply to this email.
+"""
+        
+        # Envia para o usuário
+        user_email_sent = send_email_notification(
+            subject=subject,
+            text_body=body,
+            recipient_email=recipient_email,
+            attachment_path=pdf_path
+        )
+        
+        # Envia cópia para o Simplo, se solicitado
+        if send_copy_to_simplo and EMAIL_RECEIVER and user_email_sent:
+            simplo_subject = f"[COPY] Ralph Analysis for {user_name} ({profile})"
+            simplo_body = f"Copy of analysis report sent to {recipient_email} ({user_name}, {profile})."
+            
+            send_email_notification(
+                subject=simplo_subject,
+                text_body=simplo_body,
+                recipient_email=EMAIL_RECEIVER,
+                attachment_path=pdf_path
+            )
+        
+        return user_email_sent
+        
+    except Exception as e:
+        print(f"Erro ao enviar email com PDF: {e}")
+        return False
 
 @app.route("/analyze", methods=["POST"])
-def analyze_data():
-    """Recebe dados, salva conversa, gera análise IA (DeepSeek), envia email, retorna análise."""
-    print("=== DEBUG: Iniciando processo de análise ===")
+def analyze_chat():
+    """Endpoint para analisar o histórico de chat e gerar uma resposta."""
+    print("=== DEBUG: Recebendo requisição de análise ===")
     
     try:
         # Verificar se recebeu dados JSON
@@ -549,55 +506,38 @@ def analyze_data():
         if not data:
             print("ERROR: Nenhum dado JSON recebido")
             return jsonify({"error": "No data received"}), 400
-
-        print(f"DEBUG: Dados recebidos: {list(data.keys())}")
-
+            
+        # Extrair dados do request
+        chat_history = data.get("chatHistory", [])
         user_name = data.get("userName", "User")
         profile = data.get("profile", "unknown")
-        chat_history = data.get("chatHistory", [])
-        user_email = data.get("userEmail")  # Novo campo para o email do usuário
-
-        print(f"DEBUG: user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}, user_email={user_email}")
-
+        user_email = data.get("email")  # Pode ser None
+        
+        print(f"DEBUG: Recebido user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}, email={user_email}")
+        
         if not chat_history:
             print("ERROR: Histórico de chat vazio")
             return jsonify({"error": "Chat history is empty"}), 400
-
-        # --- Formatar e Salvar Conversa (para email) --- 
-        print("DEBUG: Formatando conversa para email...")
-        # Usa o mesmo limite de mensagens para o email
-        conversation_text_for_email = format_conversation_to_text(chat_history, user_name, profile, max_messages=15)
-        print(f"DEBUG: Texto da conversa para email criado ({len(conversation_text_for_email)} caracteres)")
-        
-        conversation_filepath = save_conversation_to_file(conversation_text_for_email)
-        print(f"DEBUG: Arquivo para email salvo em: {conversation_filepath}")
-
-        # --- Gera uma análise resumida para exibir no chat ---
-        print("DEBUG: Gerando análise resumida para o chat...")
-        chat_analysis = generate_deepseek_analysis(chat_history, profile, user_name, for_pdf=False)
-        
-        if "Error generating AI analysis:" in chat_analysis:
-            # Se falhar, usa uma mensagem genérica
-            chat_analysis = f"""
-            Thank you for chatting with Ralph, your Real Estate Business Analyst.
             
-            Based on our conversation, we've identified several opportunities to improve your business. 
-            
-            To receive your detailed PDF report, please enter your email address below.
-            """
-            print("WARN: Falha na análise para chat, usando texto genérico")
-
-        # --- Se o email do usuário foi fornecido, gera e envia o PDF ---
+        # --- Salvar conversa em arquivo para referência ---
+        conversation_text = format_conversation_to_text(chat_history, user_name, profile)
+        conversation_filepath = save_conversation_to_file(conversation_text)
+        # ------------------------------------------------
+        
+        # --- Gerar análise usando a API da IA ---
+        print("DEBUG: Gerando análise via API...")
+        chat_analysis = generate_deepseek_analysis(chat_history, profile, user_name)
+        # ----------------------------------------
+        
+        # --- Gerar e enviar PDF se o email foi fornecido ---
         pdf_path = None
-        pdf_filename = None
-        
         if user_email:
-            print(f"DEBUG: Email do usuário fornecido: {user_email}. Gerando PDF...")
+            print(f"DEBUG: Email fornecido ({user_email}). Gerando PDF...")
             
-            # Gera o PDF com conteúdo da API
+            # Gera o PDF
             pdf_path, pdf_filename = generate_pdf_report_with_ai_content(chat_history, profile, user_name)
             
-            if pdf_path and pdf_filename:
+            if pdf_path:
                 print(f"DEBUG: PDF gerado com sucesso: {pdf_path}. Enviando por email...")
                 
                 # Envia o PDF por email para o usuário e para o Simplo
@@ -669,9 +609,17 @@ def analyze_data():
         }
         return jsonify(error_response), 500
 
-@app.route("/submit-email", methods=["POST"])
+@app.route("/submit-email", methods=["POST", "OPTIONS"])
 def submit_email():
     """Endpoint para receber o email do usuário e iniciar o processo de geração e envio do PDF."""
+    # Adiciona tratamento específico para requisições OPTIONS (preflight CORS)
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "POST,OPTIONS")
+        return response
+        
     print("=== DEBUG: Recebendo email do usuário ===")
     
     try:
@@ -717,30 +665,39 @@ def submit_email():
             )
             
             if email_sent:
-                return jsonify({
+                response = jsonify({
                     "status": "success",
                     "message": f"Report sent to {user_email}"
-                }), 200
+                })
+                # Adiciona cabeçalhos CORS explicitamente
+                response.headers.add("Access-Control-Allow-Origin", "*")
+                return response, 200
             else:
-                return jsonify({
+                response = jsonify({
                     "status": "error",
                     "message": "Failed to send email"
-                }), 500
+                })
+                response.headers.add("Access-Control-Allow-Origin", "*")
+                return response, 500
         else:
-            return jsonify({
+            response = jsonify({
                 "status": "error",
                 "message": "Failed to generate PDF report"
-            }), 500
+            })
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            return response, 500
 
     except Exception as e:
         print(f"ERROR CRÍTICO no endpoint /submit-email: {e}")
         import traceback
         traceback.print_exc()
         
-        return jsonify({
+        response = jsonify({
             "status": "error",
             "message": f"An unexpected error occurred: {str(e)[:200]}"
-        }), 500
+        })
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 500
 
 @app.route("/health")
 def health_check():

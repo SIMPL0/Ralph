@@ -119,17 +119,38 @@
         .message.bot .message-content { background: white; color: #333; border-bottom-left-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .message.user .message-content { background: #100f0f; color: white; border-bottom-right-radius: 5px; max-width: 70%; }
 
-        /* Estilos para a resposta da IA (agora texto plano) */
+        /* Estilos aprimorados para a resposta da IA */
         .message.bot .analysis-text {
              margin-top: 15px;
              line-height: 1.6;
              border: 1px solid #e0e0e0;
-             padding: 20px;
+             padding: 25px;
              border-radius: 10px;
              background-color: #fdfdfd;
              font-size: 16px;
              color: #333;
              white-space: pre-wrap; /* Preserva quebras de linha do texto */
+             box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Estilo para seções do resumo */
+        .analysis-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .analysis-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .analysis-section-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #100f0f;
+            font-size: 17px;
         }
 
         /* === INPUT CONTAINER === */
@@ -173,14 +194,23 @@
         .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; text-align: center; }
         .status-message { display: none; margin-top: 10px; text-align: center; color: #555; }
 
-        /* === EMAIL FORM === */
+        /* === EMAIL FORM - Melhorado === */
         .email-form {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f0f2f5;
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
             display: none;
+            border-top: 3px solid #100f0f;
+        }
+
+        .email-form-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #100f0f;
+            font-size: 16px;
+            text-align: center;
         }
 
         .email-form-container {
@@ -269,11 +299,12 @@
             </div>
             <button id="finishBtn" class="finish-btn" disabled>Click Here for Your Analysis</button>
             
-            <!-- Formulário de Email (inicialmente oculto) -->
+            <!-- Formulário de Email (inicialmente oculto) - Melhorado -->
             <div id="emailForm" class="email-form">
+                <div class="email-form-title">Receba seu relatório detalhado em PDF</div>
                 <div class="email-form-container">
-                    <input type="email" id="userEmail" placeholder="Enter your email address" required>
-                    <button id="submitEmailBtn">Get Detailed PDF Report</button>
+                    <input type="email" id="userEmail" placeholder="Digite seu endereço de email" required>
+                    <button id="submitEmailBtn">Obter Relatório Completo</button>
                 </div>
             </div>
             
@@ -322,32 +353,32 @@
             { id: 'q9', text: "How satisfied are you with your current tools? What's missing or could be better?", key: 'toolSatisfaction', placeholder: 'Describe satisfaction and gaps' },
             { id: 'q10', text: "Describe your typical process for following up with a new lead.", key: 'followUpProcess', placeholder: 'Steps you take after getting a lead' },
             { id: 'q11', text: "What's the biggest challenge you face in converting leads into actual clients?", key: 'conversionChallenge', placeholder: 'Describe the main difficulty' },
-            { id: 'q12', text: "How do you currently manage your schedule and appointments?", key: 'scheduleManagement', placeholder: 'e.g., Google Calendar, specific app, paper diary' },
-            { id: 'q13', text: "Which administrative task takes up the most significant portion of your non-selling time? (e.g., paperwork, scheduling viewings, marketing prep)", key: 'adminTimeSink', placeholder: 'Identify the most time-consuming task' },
-            { id: 'q14', text: "How do you stay updated on market trends and property values in your area?", key: 'marketKnowledgeSource', placeholder: 'e.g., MLS data, industry reports, networking' },
-            { id: 'q15', text: "What is your strategy for marketing your listings or yourself as an agent?", key: 'marketingStrategy', placeholder: 'Describe your marketing approach' },
-            { id: 'q16', text: "What percentage of your business comes from repeat clients or referrals?", key: 'repeatBusinessPercentage', placeholder: 'Estimate percentage (e.g., 30%)' },
-            { id: 'q17', text: "What is one skill you'd like to improve to grow your business further? (e.g., negotiation, digital marketing, video creation)", key: 'skillImprovement', placeholder: 'Identify a skill to develop' },
-            { id: 'q18', text: "How do you handle transaction management and paperwork for closings?", key: 'transactionManagement', placeholder: 'Describe your process or tools used' },
-            { id: 'q19', text: "What is your income goal for the next 12 months?", key: 'incomeGoal', placeholder: 'Enter your target income' },
-            { id: 'q20', text: "Thinking about all the tasks you do, if you could magically automate one repetitive part of your work to free up time, what would it be?", key: 'automationWish', placeholder: 'e.g., Sending market updates to leads' }
+            { id: 'q12', text: "How do you currently manage your schedule and appointments?", key: 'scheduleManagement', placeholder: 'e.g., Google Calendar, paper planner' },
+            { id: 'q13', text: "What percentage of your business comes from repeat clients or referrals?", key: 'repeatBusinessPercent', placeholder: 'Estimate percentage' },
+            { id: 'q14', text: "How do you stay in touch with past clients?", key: 'pastClientContact', placeholder: 'Describe your methods' },
+            { id: 'q15', text: "What's your average commission per transaction?", key: 'averageCommission', placeholder: 'e.g., $8,000, 2.5% of sale price' },
+            { id: 'q16', text: "How many transactions did you close in the past 12 months?", key: 'transactionCount', placeholder: 'Enter approximate number' },
+            { id: 'q17', text: "What's one skill you'd like to develop further to grow your business?", key: 'skillDevelopment', placeholder: 'e.g., negotiation, social media marketing' },
+            { id: 'q18', text: "What are your business goals for the next 12 months?", key: 'businessGoals', placeholder: 'Describe your primary goals' },
+            { id: 'q19', text: "If you could automate one aspect of your business, what would it be?", key: 'automationWish', placeholder: 'Describe what you would automate' },
+            { id: 'q20', text: "What do you think is your biggest opportunity for growth right now?", key: 'growthOpportunity', placeholder: 'Identify your key opportunity' }
         ];
         const questions_employee = [
-            { id: 'q1', text: "Hi there! I'm Ralph. Let's start with your name?", key: 'userName', placeholder: 'Enter your name' },
-            { id: 'q2', text: "Nice to meet you, {userName}! What's the name of the real estate company or brokerage you work for?", key: 'companyName', placeholder: 'Enter company name' },
-            { id: 'q3', text: "What is your specific role within the company? (e.g., Sales Agent, Team Lead, Marketing Coordinator, Transaction Coordinator)", key: 'role', placeholder: 'Describe your role' },
-            { id: 'q4', text: "How long have you been working in this role?", key: 'experienceYears', placeholder: 'e.g., 3 years, 6 months' },
-            { id: 'q5', text: "Approximately how many agents or employees work at your company?", key: 'companySize', placeholder: 'Enter approximate number' },
-            { id: 'q6', text: "What CRM or lead management system does your company use?", key: 'companyCRM', placeholder: 'e.g., Salesforce, in-house system, none' },
-            { id: 'q7', text: "How would you rate the effectiveness of your current CRM or lead management system on a scale of 1-10?", key: 'crmRating', placeholder: 'Enter a number 1-10' },
-            { id: 'q8', text: "What are your main responsibilities in your current role?", key: 'responsibilities', placeholder: 'List your key responsibilities' },
-            { id: 'q9', text: "Which of your responsibilities takes up the most time?", key: 'timeConsumingTask', placeholder: 'Describe the most time-consuming task' },
-            { id: 'q10', text: "What tools or software do you personally use most frequently in your daily work?", key: 'personalTools', placeholder: 'List tools/software you use regularly' },
-            { id: 'q11', text: "What is the biggest challenge you face in your current role?", key: 'biggestChallenge', placeholder: 'Describe your main challenge' },
-            { id: 'q12', text: "How does your company currently handle transaction management and paperwork?", key: 'transactionManagement', placeholder: 'Describe the process or tools used' },
-            { id: 'q13', text: "How does your team or company communicate internally?", key: 'internalCommunication', placeholder: 'e.g., Slack, email, meetings, etc.' },
-            { id: 'q14', text: "How does your company generate most of its leads?", key: 'leadGeneration', placeholder: 'Describe lead generation methods' },
-            { id: 'q15', text: "What is one process at your company that you think could be improved?", key: 'processImprovement', placeholder: 'Identify an inefficient process' },
+            { id: 'q1', text: "Hi there! I'm Ralph. To start, what's your name?", key: 'userName', placeholder: 'Enter your name' },
+            { id: 'q2', text: "Great to meet you, {userName}! What's the name of the real estate company you work for?", key: 'companyName', placeholder: 'Enter company name' },
+            { id: 'q3', text: "What's your role or position at the company?", key: 'jobRole', placeholder: 'e.g., Agent, Team Lead, Manager' },
+            { id: 'q4', text: "How long have you been working at this company?", key: 'tenureYears', placeholder: 'e.g., 3 years, 6 months' },
+            { id: 'q5', text: "What is your company's primary focus area? (e.g., residential sales, commercial leasing)", key: 'companyFocus', placeholder: 'Describe main business focus' },
+            { id: 'q6', text: "What geographical areas does your company serve?", key: 'serviceArea', placeholder: 'List service areas' },
+            { id: 'q7', text: "How many agents or employees work at your company?", key: 'companySize', placeholder: 'Approximate number' },
+            { id: 'q8', text: "What CRM or lead management system does your company use?", key: 'companyCRM', placeholder: 'e.g., Salesforce, in-house system' },
+            { id: 'q9', text: "What other key software or tools does your company provide?", key: 'companyTools', placeholder: 'List important software/tools' },
+            { id: 'q10', text: "How does your company primarily generate leads for agents?", key: 'leadGeneration', placeholder: 'Describe lead generation methods' },
+            { id: 'q11', text: "What's your personal approach to converting leads into clients?", key: 'conversionApproach', placeholder: 'Describe your strategy' },
+            { id: 'q12', text: "What's the biggest challenge you face in your current role?", key: 'roleChallenge', placeholder: 'Describe your main challenge' },
+            { id: 'q13', text: "How does your company handle transaction management and paperwork?", key: 'transactionManagement', placeholder: 'Describe process or tools used' },
+            { id: 'q14', text: "What training or professional development does your company provide?", key: 'companyTraining', placeholder: 'Describe available training' },
+            { id: 'q15', text: "How are commissions or compensation structured at your company?", key: 'compensationStructure', placeholder: 'Explain the structure' },
             { id: 'q16', text: "How does your company track performance metrics for agents or teams?", key: 'performanceTracking', placeholder: 'Describe tracking methods or tools' },
             { id: 'q17', text: "What is one skill you'd like to develop further to advance in your career?", key: 'skillDevelopment', placeholder: 'Identify a skill to improve' },
             { id: 'q18', text: "What are your career goals for the next 1-2 years?", key: 'careerGoals', placeholder: 'Describe your short-term goals' },
@@ -455,11 +486,184 @@
             }
         }
 
-        // Função para processar a entrada do usuário
-        function handleUserInput() {
-            if (userInput.disabled || !userInput.value.trim()) return;
+        // Função para adicionar mensagem ao chat
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (sender === 'bot') {
+                // Mensagem do bot
+                messageDiv.innerHTML = `
+                    <div class="avatar">R</div>
+                    <div class="message-content">
+                        <p>${content}</p>
+                    </div>
+                `;
+            } else {
+                // Mensagem do usuário
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <p>${content}</p>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Adiciona ao histórico de chat
+            chatHistory.push({
+                sender: sender,
+                content: content
+            });
+        }
+
+        // Função para adicionar análise formatada ao chat
+        function addAnalysisMessage(content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            
+            // Formata o conteúdo da análise para melhorar a apresentação visual
+            // Divide o texto em seções baseadas em quebras de linha e padrões comuns
+            let formattedContent = content;
+            
+            // Função para formatar o texto em seções
+            function formatAnalysisText(text) {
+                // Identifica possíveis seções no texto
+                const sections = [];
+                let currentSection = "";
+                let currentTitle = "Análise de Negócio";
+                
+                // Divide o texto em linhas
+                const lines = text.split('\n');
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Verifica se é um possível título de seção (linha curta seguida de linha em branco)
+                    const isPotentialTitle = line.length > 0 && line.length < 50 && 
+                                           (i === 0 || lines[i-1].trim() === '') &&
+                                           (i === lines.length-1 || lines[i+1].trim() === '');
+                    
+                    // Verifica se é um marcador de seção explícito
+                    const isExplicitSection = /^(pontos fortes|áreas de melhoria|recomendações|oportunidades|conclusão|strengths|areas|recommendations|opportunities|conclusion)/i.test(line);
+                    
+                    if ((isPotentialTitle || isExplicitSection) && currentSection.trim()) {
+                        // Salva a seção anterior
+                        sections.push({
+                            title: currentTitle,
+                            content: currentSection.trim()
+                        });
+                        
+                        // Inicia nova seção
+                        currentTitle = line;
+                        currentSection = "";
+                    } else if (line === "---" && currentSection.trim()) {
+                        // Trata separadores como fim de seção
+                        sections.push({
+                            title: currentTitle,
+                            content: currentSection.trim()
+                        });
+                        
+                        // Reseta para próxima seção
+                        currentTitle = "Conclusão";
+                        currentSection = "";
+                    } else {
+                        // Adiciona linha à seção atual
+                        currentSection += line + "\n";
+                    }
+                }
+                
+                // Adiciona a última seção
+                if (currentSection.trim()) {
+                    sections.push({
+                        title: currentTitle,
+                        content: currentSection.trim()
+                    });
+                }
+                
+                // Se não conseguiu identificar seções, retorna o texto original
+                if (sections.length <= 1) {
+                    return `<div class="analysis-section">
+                                <div class="analysis-section-content">${text}</div>
+                            </div>`;
+                }
+                
+                // Formata as seções identificadas
+                let formattedHtml = "";
+                sections.forEach(section => {
+                    formattedHtml += `
+                        <div class="analysis-section">
+                            <div class="analysis-section-title">${section.title}</div>
+                            <div class="analysis-section-content">${section.content}</div>
+                        </div>
+                    `;
+                });
+                
+                return formattedHtml;
+            }
+            
+            // Aplica a formatação
+            const formattedHtml = formatAnalysisText(formattedContent);
+            
+            messageDiv.innerHTML = `
+                <div class="avatar">R</div>
+                <div class="message-content">
+                    <p>Aqui está a análise do seu negócio imobiliário:</p>
+                    <div class="analysis-text">${formattedHtml}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Adiciona ao histórico de chat
+            chatHistory.push({
+                sender: 'bot',
+                content: content
+            });
+        }
+
+        // Função para mostrar indicador de digitação
+        function showTypingIndicator() {
+            if (document.querySelector('.typing-indicator')) return;
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="avatar">R</div>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            typingDiv.style.display = 'flex';
+        }
+
+        // Função para esconder indicador de digitação
+        function hideTypingIndicator() {
+            const typingDiv = document.querySelector('.typing-indicator');
+            if (typingDiv) typingDiv.remove();
+        }
+
+        // Função para atualizar a barra de progresso
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressFill.style.width = `${progress}%`;
+        }
+
+        // Função para enviar resposta do usuário
+        function sendUserResponse() {
+            if (isTyping) return;
             
             const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+            
+            // Adiciona a resposta ao chat
             addMessage('user', userMessage);
             
             // Armazena a resposta
@@ -471,266 +675,219 @@
                 userName = userMessage;
             }
             
-            // Limpa e desabilita o input
+            // Limpa o input e desabilita temporariamente
             userInput.value = '';
-            userInput.style.height = 'auto';
             userInput.disabled = true;
             sendBtn.disabled = true;
             
             // Avança para a próxima pergunta
             currentQuestionIndex++;
             
-            // Simula o bot digitando
-            simulateTyping();
-        }
-
-        // Função para simular o bot digitando
-        function simulateTyping() {
-            if (isTyping) return;
-            
+            // Simula tempo de resposta
             isTyping = true;
-            
-            // Cria o indicador de digitação
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'typing-indicator';
-            typingIndicator.innerHTML = `
-                <div class="avatar">R</div>
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(typingIndicator);
-            typingIndicator.style.display = 'flex';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Define um tempo aleatório para "digitação"
-            const typingTime = Math.floor(Math.random() * 1000) + 1000; // 1-2 segundos
+            showTypingIndicator();
             
             setTimeout(() => {
-                typingIndicator.remove();
+                hideTypingIndicator();
                 isTyping = false;
                 askNextQuestion();
-            }, typingTime);
+            }, 1000);
         }
 
-        // Função para adicionar mensagem ao chat
-        function addMessage(sender, content) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
+        // Função para finalizar o questionário e obter análise
+        function finishQuestionnaire() {
+            if (isFinished) return;
+            isFinished = true;
             
-            if (sender === 'bot') {
-                messageDiv.innerHTML = `
-                    <div class="avatar">R</div>
-                    <div class="message-content">${content}</div>
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <div class="message-content">${content}</div>
-                `;
-            }
+            // Desabilita o botão de finalizar
+            finishBtn.disabled = true;
+            finishBtn.textContent = "Analyzing your business...";
             
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // Mostra indicador de digitação
+            showTypingIndicator();
             
-            // Adiciona ao histórico do chat
-            chatHistory.push({
-                sender: sender,
-                content: content
+            // Prepara os dados para enviar ao backend
+            const requestData = {
+                userName: userName || "User",
+                profile: USER_PROFILE,
+                chatHistory: chatHistory,
+                answers: userAnswers
+            };
+            
+            console.log("Enviando dados para análise:", requestData);
+            
+            // Envia os dados para o backend
+            fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Esconde indicador de digitação
+                hideTypingIndicator();
+                
+                // Adiciona a análise ao chat
+                addAnalysisMessage(data.analysis_text);
+                
+                // Atualiza o botão de finalizar
+                finishBtn.style.display = 'none';
+                
+                // Se precisar de email, mostra o formulário
+                if (data.need_email) {
+                    emailForm.style.display = 'block';
+                }
+                
+                // Rola para o final do chat
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                console.log("Transição para o chat concluída");
+            })
+            .catch(error => {
+                console.error("Erro ao obter análise:", error);
+                
+                // Esconde indicador de digitação
+                hideTypingIndicator();
+                
+                // Adiciona mensagem de erro
+                addMessage('bot', "I'm sorry, there was an error generating your analysis. Please try again later.");
+                
+                // Reseta o botão de finalizar
+                finishBtn.disabled = false;
+                finishBtn.textContent = "Try Again";
+                isFinished = false;
             });
         }
 
-        // Função para atualizar a barra de progresso
-        function updateProgress() {
-            const progress = ((currentQuestionIndex) / questions.length) * 100;
-            progressFill.style.width = `${progress}%`;
-        }
-
-        // Função para escapar HTML (segurança)
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    "'": '&#39;',
-                    '"': '&quot;'
-                }[tag]));
-        }
-
-        // Função para obter a análise
-        async function getAnalysis() {
-            if (isFinished) return;
-            
-            finishBtn.disabled = true;
-            finishBtn.textContent = 'Analyzing...';
-            statusMessage.textContent = 'Preparing analysis...';
-            statusMessage.style.display = 'block';
-            
-            try {
-                // Prepara os dados para enviar
-                const dataToSend = {
-                    userName: userAnswers.userName || "User",
-                    profile: USER_PROFILE,
-                    chatHistory: chatHistory
-                };
-                
-                console.log("Enviando dados para análise:", dataToSend);
-                
-                // Envia para o backend
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSend),
-                });
-
-                statusMessage.textContent = 'Processing analysis...';
-
-                if (!response.ok) {
-                    let errorMsg = `HTTP error! status: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg = errorData.analysis_text || errorData.error || JSON.stringify(errorData);
-                    } catch (jsonError) {
-                         try { errorMsg = await response.text(); } catch (textError) { /* ignore */ }
-                    }
-                     throw new Error(errorMsg);
-                }
-
-                const responseText = await response.text(); // Read as text first
-                if (!responseText) {
-                    throw new Error("Received empty response from server.");
-                }
-
-                const result = JSON.parse(responseText); // Parse text to JSON
-
-                statusMessage.textContent = 'Analysis complete!';
-                setTimeout(() => { statusMessage.style.display = 'none'; }, 2000);
-
-                // Adiciona a análise (texto plano) como mensagem do bot
-                addMessage('bot', result.analysis_text || "Analysis received, but content is empty.");
-                finishBtn.textContent = 'Analysis Complete!';
-                finishBtn.style.display = 'none'; // Esconde o botão após análise
-                
-                // Verifica se precisa solicitar o email
-                if (result.need_email === true) {
-                    // Mostra o formulário de email
-                    emailForm.style.display = 'block';
-                    // Rola para o formulário
-                    emailForm.scrollIntoView({ behavior: 'smooth' });
-                }
-
-            } catch (error) {
-                console.error('Error fetching analysis:', error);
-                statusMessage.textContent = 'Error during analysis.';
-                addMessage('bot', `<div class="analysis-text"><strong>Analysis Error</strong><br>Sorry, an error occurred: ${escapeHTML(error.message || 'Unknown error')}<br>Please check the console or try again later.</div>`);
-                finishBtn.textContent = 'Analysis Failed - Try Again?'; // Permite tentar novamente
-                finishBtn.disabled = false; // Reabilita o botão em caso de erro
-            }
-        }
-        
-        // Função para enviar o email e solicitar o PDF
-        async function submitEmail() {
+        // Função para enviar email
+        function submitEmail() {
             const email = userEmail.value.trim();
-            
-            // Validação básica de email
-            if (!email || !email.includes('@') || !email.includes('.')) {
-                alert('Please enter a valid email address');
+            if (!email) {
+                alert("Please enter your email address.");
                 return;
             }
             
-            // Desabilita o botão e mostra status
-            submitEmailBtn.disabled = true;
-            submitEmailBtn.textContent = 'Sending...';
-            statusMessage.textContent = 'Sending your report...';
-            statusMessage.style.display = 'block';
+            // Valida o formato do email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
             
-            try {
-                // Prepara os dados para enviar
-                const dataToSend = {
-                    email: email,
-                    userName: userAnswers.userName || "User",
-                    profile: USER_PROFILE,
-                    chatHistory: chatHistory
-                };
-                
-                console.log("Enviando solicitação de PDF:", dataToSend);
-                
-                // Envia para o backend
-                const response = await fetch(SUBMIT_EMAIL_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSend),
-                });
-                
+            // Desabilita o botão de envio
+            submitEmailBtn.disabled = true;
+            submitEmailBtn.textContent = "Sending...";
+            
+            // Mostra mensagem de status
+            statusMessage.style.display = 'block';
+            statusMessage.textContent = "Sending your detailed report...";
+            
+            // Prepara os dados para enviar ao backend
+            const requestData = {
+                email: email,
+                userName: userName || "User",
+                profile: USER_PROFILE,
+                chatHistory: chatHistory
+            };
+            
+            console.log("Enviando solicitação de PDF:", requestData);
+            
+            // Envia os dados para o backend
+            fetch(SUBMIT_EMAIL_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
                 if (!response.ok) {
-                    let errorMsg = `HTTP error! status: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg = errorData.message || errorData.error || JSON.stringify(errorData);
-                    } catch (jsonError) {
-                        try { errorMsg = await response.text(); } catch (textError) { /* ignore */ }
-                    }
-                    throw new Error(errorMsg);
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
+                return response.json();
+            })
+            .then(data => {
+                // Atualiza a mensagem de status
+                statusMessage.textContent = "Your detailed report has been sent to your email!";
                 
-                const result = await response.json();
-                
-                // Esconde o formulário
+                // Desabilita o formulário de email
                 emailForm.style.display = 'none';
-                
-                // Mostra mensagem de sucesso
-                statusMessage.textContent = 'Report sent successfully!';
-                setTimeout(() => { statusMessage.style.display = 'none'; }, 3000);
                 
                 // Adiciona mensagem de confirmação
                 addMessage('bot', `Great! Your detailed PDF report has been sent to ${email}. Please check your inbox (and spam folder if necessary).`);
                 
-            } catch (error) {
-                console.error('Error submitting email:', error);
-                statusMessage.textContent = 'Error sending report.';
+                // Rola para o final do chat
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            })
+            .catch(error => {
+                console.error("Error submitting email:", error);
+                
+                // Reseta o botão de envio
                 submitEmailBtn.disabled = false;
-                submitEmailBtn.textContent = 'Try Again';
-                addMessage('bot', `Sorry, there was an issue sending your report. Please try again or contact support. Error: ${escapeHTML(error.message || 'Unknown error')}`);
-            }
+                submitEmailBtn.textContent = "Get Detailed PDF Report";
+                
+                // Atualiza a mensagem de status
+                statusMessage.textContent = "There was an error sending your report. Please try again.";
+                
+                // Adiciona mensagem de erro
+                addMessage('bot', "I'm sorry, there was an error sending your detailed report. Please try again or contact support if the problem persists.");
+            });
         }
 
-        // --- INICIALIZAÇÃO COM ANIMAÇÃO --- 
-        function startChatInterface() {
-            console.log("Iniciando transição para o chat");
-            introAnimationContainer.classList.add('hidden');
-            // Muda fundo do body APÓS a animação e ANTES do chat aparecer
-            document.body.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #100f0f 100%)';
-            chatContainer.classList.add('visible');
-            document.body.style.overflow = 'auto';
+        // --- EVENT LISTENERS ---
 
-            // Mostra a seleção de perfil inicial
-            setTimeout(() => {
-                 showProfileSelection();
-            }, 500); // Pequeno atraso para efeito
-        }
-
-        // Inicia a transição após a animação (3s de animação + 0.5s de fade out)
-        setTimeout(startChatInterface, 3500);
-
-        // Event listeners para input e botões
-        userInput.addEventListener('input', () => {
-            // Auto-ajuste da altura do textarea
-            userInput.style.height = 'auto';
-            userInput.style.height = (userInput.scrollHeight) + 'px';
-        });
-        userInput.addEventListener('keypress', (e) => {
+        // Evento para enviar resposta ao pressionar Enter
+        userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleUserInput();
+                if (!userInput.disabled && userInput.value.trim()) {
+                    sendUserResponse();
+                }
             }
         });
-        sendBtn.addEventListener('click', handleUserInput);
-        finishBtn.addEventListener('click', getAnalysis);
+
+        // Ajusta a altura do textarea conforme o conteúdo
+        userInput.addEventListener('input', () => {
+            userInput.style.height = 'auto';
+            userInput.style.height = (userInput.scrollHeight > 120 ? 120 : userInput.scrollHeight) + 'px';
+        });
+
+        // Evento para o botão de enviar
+        sendBtn.addEventListener('click', () => {
+            if (!userInput.disabled && userInput.value.trim()) {
+                sendUserResponse();
+            }
+        });
+
+        // Evento para o botão de finalizar
+        finishBtn.addEventListener('click', finishQuestionnaire);
+
+        // Evento para o botão de enviar email
         submitEmailBtn.addEventListener('click', submitEmail);
 
+        // --- INICIALIZAÇÃO ---
+        
+        // Inicia a animação de introdução
+        setTimeout(() => {
+            introAnimationContainer.classList.add('hidden');
+            
+            // Mostra o container do chat após a animação
+            setTimeout(() => {
+                chatContainer.classList.add('visible');
+                
+                // Inicia o chat após a transição
+                setTimeout(() => {
+                    showProfileSelection();
+                }, 500);
+            }, 500);
+        }, 3000); // Duração da animação de introdução
     </script>
 </body>
 </html>
