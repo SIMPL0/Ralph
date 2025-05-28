@@ -159,7 +159,7 @@ Analysis Report:"""
 2. Main areas for improvement
 3. 2-3 actionable recommendations
 
-Keep professional yet conversational. Max 250 words. End by mentioning that a detailed PDF report will be sent to their email.
+Keep professional yet conversational. Max 250 words. End by mentioning that a detailed PDF report will be sent to their email with the following exact text: "To receive your detailed PDF report, please enter your email address below."
 
 Conversation Data:
 {conversation_text}
@@ -579,11 +579,11 @@ def analyze_data():
         if "Error generating AI analysis:" in chat_analysis:
             # Se falhar, usa uma mensagem genérica
             chat_analysis = f"""
-            Obrigado por conversar com Ralph, seu Analista de Negócios Imobiliários.
+            Thank you for chatting with Ralph, your Real Estate Business Analyst.
             
-            Com base em nossa conversa, identificamos algumas oportunidades para melhorar seu negócio. 
+            Based on our conversation, we've identified several opportunities to improve your business. 
             
-            Um relatório detalhado será enviado para seu email em breve, com uma análise completa e recomendações personalizadas.
+            To receive your detailed PDF report, please enter your email address below.
             """
             print("WARN: Falha na análise para chat, usando texto genérico")
 
@@ -613,22 +613,23 @@ def analyze_data():
                     print(f"DEBUG: Email enviado com sucesso para {user_email} e para o Simplo")
                     
                     # Adiciona mensagem sobre o email enviado à análise do chat
-                    chat_analysis += f"\n\nUm relatório detalhado foi enviado para {user_email}. Verifique sua caixa de entrada (e pasta de spam, se necessário)."
+                    chat_analysis += f"\n\nA detailed report has been sent to {user_email}. Please check your inbox (and spam folder if necessary)."
                 else:
                     print("WARN: Falha ao enviar email com o PDF")
                     
                     # Adiciona mensagem sobre a falha no envio do email
-                    chat_analysis += "\n\nHouve um problema ao enviar o relatório por email. Por favor, entre em contato com o suporte."
+                    chat_analysis += "\n\nThere was an issue sending the report to your email. Please contact support for assistance."
             else:
                 print("WARN: Falha ao gerar o PDF")
                 
                 # Adiciona mensagem sobre a falha na geração do PDF
-                chat_analysis += "\n\nHouve um problema ao gerar seu relatório detalhado. Por favor, entre em contato com o suporte."
+                chat_analysis += "\n\nThere was an issue generating your detailed report. Please contact support for assistance."
         else:
             print("INFO: Email do usuário não fornecido. Pulando geração e envio de PDF.")
             
             # Adiciona mensagem sobre a necessidade de fornecer o email
-            chat_analysis += "\n\nPara receber um relatório detalhado por email, por favor forneça seu endereço de email."
+            if "To receive your detailed PDF report" not in chat_analysis:
+                chat_analysis += "\n\nTo receive your detailed PDF report, please enter your email address below."
 
         # --- Enviar Email com a conversa para o Simplo (mesmo sem PDF) --- 
         try:
@@ -648,10 +649,11 @@ def analyze_data():
         response_data = {
             "analysis_text": chat_analysis,
             "status": "success" if "Error generating AI analysis:" not in chat_analysis else "error",
-            "email_sent": user_email is not None and pdf_path is not None
+            "email_sent": user_email is not None and pdf_path is not None,
+            "need_email": user_email is None  # Indica ao frontend que precisa solicitar o email
         }
         
-        print(f"DEBUG: Retornando análise/status: {response_data['status']}, email_sent: {response_data['email_sent']}")
+        print(f"DEBUG: Retornando análise/status: {response_data['status']}, email_sent: {response_data['email_sent']}, need_email: {response_data['need_email']}")
         return jsonify(response_data), 200
 
     except Exception as e:
@@ -662,7 +664,8 @@ def analyze_data():
         error_response = {
             "analysis_text": f"Sorry, a critical error occurred while processing your analysis. Please try again. If the problem persists, contact support.\n\nError details: {str(e)[:200]}",
             "status": "error",
-            "email_sent": False
+            "email_sent": False,
+            "need_email": False
         }
         return jsonify(error_response), 500
 

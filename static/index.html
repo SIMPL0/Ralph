@@ -173,6 +173,62 @@
         .warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; text-align: center; }
         .status-message { display: none; margin-top: 10px; text-align: center; color: #555; }
 
+        /* === EMAIL FORM === */
+        .email-form {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .email-form-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .email-form input[type="email"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .email-form input[type="email"]:focus {
+            border-color: #555;
+        }
+
+        .email-form button {
+            padding: 12px 20px;
+            background: #100f0f;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .email-form button:hover {
+            transform: translateY(-2px);
+            background-color: #333;
+        }
+
+        /* Versão responsiva para dispositivos móveis */
+        @media (max-width: 768px) {
+            .email-form-container {
+                flex-direction: column;
+            }
+            
+            .email-form button {
+                margin-top: 10px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -211,7 +267,16 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </div>
-             <button id="finishBtn" class="finish-btn" disabled>Click Here for Your Analysis</button>
+            <button id="finishBtn" class="finish-btn" disabled>Click Here for Your Analysis</button>
+            
+            <!-- Formulário de Email (inicialmente oculto) -->
+            <div id="emailForm" class="email-form">
+                <div class="email-form-container">
+                    <input type="email" id="userEmail" placeholder="Enter your email address" required>
+                    <button id="submitEmailBtn">Get Detailed PDF Report</button>
+                </div>
+            </div>
+            
             <div id="statusMessage" class="status-message"></div>
         </div>
     </div>
@@ -219,6 +284,7 @@
     <script>
         // --- CONFIGURAÇÃO INICIAL ---
         const BACKEND_URL = 'https://ralph-v68j.onrender.com/analyze';
+        const SUBMIT_EMAIL_URL = 'https://ralph-v68j.onrender.com/submit-email';
         let USER_PROFILE = null; // 'individual', 'employee', 'owner'
 
         // --- ELEMENTOS DOM ---
@@ -230,6 +296,9 @@
         const progressFill = document.getElementById('progressFill');
         const finishBtn = document.getElementById('finishBtn');
         const statusMessage = document.getElementById('statusMessage');
+        const emailForm = document.getElementById('emailForm');
+        const userEmail = document.getElementById('userEmail');
+        const submitEmailBtn = document.getElementById('submitEmailBtn');
 
         // --- VARIÁVEIS DE ESTADO ---
         let currentQuestionIndex = 0;
@@ -238,6 +307,7 @@
         let userAnswers = {}; // Armazena Q&A
         let isTyping = false;
         let questions = []; // Será preenchido com base no perfil
+        let userName = ""; // Armazena o nome do usuário
 
         // --- DEFINIÇÃO DAS PERGUNTAS POR PERFIL (20 perguntas cada) ---
         const questions_individual = [
@@ -266,236 +336,250 @@
             { id: 'q1', text: "Hi there! I'm Ralph. Let's start with your name?", key: 'userName', placeholder: 'Enter your name' },
             { id: 'q2', text: "Nice to meet you, {userName}! What's the name of the real estate company or brokerage you work for?", key: 'companyName', placeholder: 'Enter company name' },
             { id: 'q3', text: "What is your specific role within the company? (e.g., Sales Agent, Team Lead, Marketing Coordinator, Transaction Coordinator)", key: 'role', placeholder: 'Describe your role' },
-            { id: 'q4', text: "How long have you been working at this company?", key: 'companyTenure', placeholder: 'e.g., 2 years, 10 months' },
-            { id: 'q5', text: "Does your company provide you with leads? If so, what are the primary sources? (e.g., Zillow, company website, marketing campaigns)", key: 'companyLeadSources', placeholder: 'Describe lead sources provided (or None)' },
-            { id: 'q6', text: "What CRM (Customer Relationship Management) system does your company use, if any?", key: 'crmSystem', placeholder: 'e.g., Salesforce, Follow Up Boss, proprietary system' },
-            { id: 'q7', text: "How effective do you find the company's CRM for managing your workflow and client interactions? What could be improved?", key: 'crmEffectiveness', placeholder: 'Describe effectiveness and areas for improvement' },
-            { id: 'q8', text: "What level of training or support does the company provide regarding technology and software tools?", key: 'techTraining', placeholder: 'Describe the tech training/support' },
-            { id: 'q9', text: "Describe the process for collaborating with other agents or departments within your company on a deal.", key: 'collaborationProcess', placeholder: 'How do you work with others internally?' },
-            { id: 'q10', text: "What are the company's expectations regarding your sales targets or performance metrics?", key: 'performanceExpectations', placeholder: 'Describe targets or KPIs' },
-            { id: 'q11', text: "Which internal company process do you find the most time-consuming or inefficient? (e.g., reporting, compliance checks, marketing material approval)", key: 'inefficientProcess', placeholder: 'Identify a time-consuming internal process' },
-            { id: 'q12', text: "How does the company handle marketing for its agents or listings? Do you have input or control over this?", key: 'companyMarketing', placeholder: 'Describe the company marketing process' },
-            { id: 'q13', text: "What opportunities for professional development or career growth are available within the company?", key: 'growthOpportunities', placeholder: 'Describe development opportunities' },
-            { id: 'q14', text: "How is communication managed within your team or the company overall? (e.g., email, Slack, meetings)", key: 'internalCommunication', placeholder: 'Describe communication methods' },
-            { id: 'q15', text: "What is the biggest challenge you face in meeting your goals within the current company structure or processes?", key: 'internalChallenge', placeholder: 'Describe your main challenge at the company' },
-            { id: 'q16', text: "Does the company utilize any specific tools for transaction management or document handling?", key: 'companyTransactionTools', placeholder: 'List tools like DocuSign, SkySlope, etc.' },
-            { id: 'q17', text: "How much autonomy do you have in your day-to-day tasks and decision-making?", key: 'autonomyLevel', placeholder: 'Describe your level of independence' },
-            { id: 'q18', text: "What kind of performance feedback or reviews do you receive from management?", key: 'performanceFeedback', placeholder: 'Describe the feedback process' },
-            { id: 'q19', text: "What is one tool or system you wish the company would adopt to make your job easier or more effective?", key: 'toolWish', placeholder: 'Suggest a tool or system' },
-            { id: 'q20', text: "If one repetitive task related to company processes (like reporting, data entry, or internal communication) could be automated, which one would save you the most time?", key: 'automationWish', placeholder: 'e.g., Generating weekly reports' }
+            { id: 'q4', text: "How long have you been working in this role?", key: 'experienceYears', placeholder: 'e.g., 3 years, 6 months' },
+            { id: 'q5', text: "Approximately how many agents or employees work at your company?", key: 'companySize', placeholder: 'Enter approximate number' },
+            { id: 'q6', text: "What CRM or lead management system does your company use?", key: 'companyCRM', placeholder: 'e.g., Salesforce, in-house system, none' },
+            { id: 'q7', text: "How would you rate the effectiveness of your current CRM or lead management system on a scale of 1-10?", key: 'crmRating', placeholder: 'Enter a number 1-10' },
+            { id: 'q8', text: "What are your main responsibilities in your current role?", key: 'responsibilities', placeholder: 'List your key responsibilities' },
+            { id: 'q9', text: "Which of your responsibilities takes up the most time?", key: 'timeConsumingTask', placeholder: 'Describe the most time-consuming task' },
+            { id: 'q10', text: "What tools or software do you personally use most frequently in your daily work?", key: 'personalTools', placeholder: 'List tools/software you use regularly' },
+            { id: 'q11', text: "What is the biggest challenge you face in your current role?", key: 'biggestChallenge', placeholder: 'Describe your main challenge' },
+            { id: 'q12', text: "How does your company currently handle transaction management and paperwork?", key: 'transactionManagement', placeholder: 'Describe the process or tools used' },
+            { id: 'q13', text: "How does your team or company communicate internally?", key: 'internalCommunication', placeholder: 'e.g., Slack, email, meetings, etc.' },
+            { id: 'q14', text: "How does your company generate most of its leads?", key: 'leadGeneration', placeholder: 'Describe lead generation methods' },
+            { id: 'q15', text: "What is one process at your company that you think could be improved?", key: 'processImprovement', placeholder: 'Identify an inefficient process' },
+            { id: 'q16', text: "How does your company track performance metrics for agents or teams?", key: 'performanceTracking', placeholder: 'Describe tracking methods or tools' },
+            { id: 'q17', text: "What is one skill you'd like to develop further to advance in your career?", key: 'skillDevelopment', placeholder: 'Identify a skill to improve' },
+            { id: 'q18', text: "What are your career goals for the next 1-2 years?", key: 'careerGoals', placeholder: 'Describe your short-term goals' },
+            { id: 'q19', text: "If you could automate one repetitive task in your current role, what would it be?", key: 'automationWish', placeholder: 'Describe a task you wish to automate' },
+            { id: 'q20', text: "What do you think is the biggest opportunity for growth or improvement at your company?", key: 'growthOpportunity', placeholder: 'Identify a key opportunity' }
         ];
         const questions_owner = [
-            { id: 'q1', text: "Hi there! I'm Ralph. Great to connect. What's your name?", key: 'userName', placeholder: 'Enter your name' },
-            { id: 'q2', text: "Welcome, {userName}! What is the official name of your real estate business?", key: 'businessName', placeholder: 'Enter your business name' },
-            { id: 'q3', text: "What specific niche or types of real estate services does your business specialize in?", key: 'businessServices', placeholder: 'e.g., Luxury residential, Commercial investments' },
-            { id: 'q4', text: "How many agents and support staff (admin, marketing, etc.) are currently part of your team?", key: 'teamSize', placeholder: 'e.g., 10 agents, 3 support staff' },
-            { id: 'q5', text: "What is your company's primary strategy for generating leads for your agents?", key: 'leadGenStrategy', placeholder: 'Describe your main lead generation methods' },
-            { id: 'q6', text: "Which lead generation channel currently provides the best Return on Investment (ROI) for your business?", key: 'bestRoiChannel', placeholder: 'e.g., Google Ads, Zillow Premier Agent' },
-            { id: 'q7', text: "What CRM or central platform do you use to manage operations, clients, and agent performance?", key: 'businessCRM', placeholder: 'List your main operational software' },
-            { id: 'q8', text: "How effective is your current technology stack in supporting your business goals? What are the main gaps?", key: 'techStackEffectiveness', placeholder: 'Assess your tech and identify gaps' },
-            { id: 'q9', text: "What are the key performance indicators (KPIs) you track to measure the success of your business and your agents?", key: 'businessKPIs', placeholder: 'List the main KPIs you monitor' },
-            { id: 'q10', text: "What is the biggest operational bottleneck or inefficiency currently impacting your business's profitability or growth?", key: 'operationalBottleneck', placeholder: 'Describe the main inefficiency' },
-            { id: 'q11', text: "How do you handle agent onboarding, training, and ongoing professional development?", key: 'agentTrainingProcess', placeholder: 'Describe your training approach' },
-            { id: 'q12', text: "What is your process for ensuring compliance and managing transaction paperwork across your team?", key: 'complianceProcess', placeholder: 'Describe how you manage compliance' },
-            { id: 'q13', text: "What percentage of your operating budget is allocated to marketing and technology respectively?", key: 'budgetAllocation', placeholder: 'Estimate % for marketing and tech' },
-            { id: 'q14', text: "How do you foster team collaboration and communication within your brokerage?", key: 'teamCollaboration', placeholder: 'Describe methods for team communication' },
-            { id: 'q15', text: "What are your primary business goals for the next 1-3 years? (e.g., market share growth, expansion, profitability increase)", key: 'businessGoals', placeholder: 'List your main goals' },
-            { id: 'q16', text: "Who do you consider your main competitors, and what is your key differentiator?", key: 'competitionDifferentiation', placeholder: 'Identify competitors and your unique value' },
-            { id: 'q17', text: "How much time do you personally spend on administrative or operational tasks versus strategic growth activities?", key: 'ownerTimeAllocation', placeholder: 'Estimate time split (e.g., 60% admin, 40% strategy)' },
-            { id: 'q18', text: "What system do you have in place for financial reporting and analysis?", key: 'financialReporting', placeholder: 'Describe your financial tracking system' },
-            { id: 'q19', text: "What is the biggest challenge you anticipate facing in the real estate market over the next year?", key: 'marketChallengeAnticipation', placeholder: 'Describe an anticipated challenge' },
-            { id: 'q20', text: "If you could implement an automated system to handle one major operational task (like lead distribution, agent reporting, or transaction tracking), which would have the biggest positive impact on your business?", key: 'automationImpactWish', placeholder: 'e.g., Automating commission calculations' }
+            { id: 'q1', text: "Hi there! I'm Ralph. Let's start with your name?", key: 'userName', placeholder: 'Enter your name' },
+            { id: 'q2', text: "Great to meet you, {userName}! What's the name of your real estate business?", key: 'businessName', placeholder: 'Enter business name' },
+            { id: 'q3', text: "How long have you owned or operated this business?", key: 'businessAge', placeholder: 'e.g., 5 years, 18 months' },
+            { id: 'q4', text: "How many agents or employees currently work at your company?", key: 'teamSize', placeholder: 'Enter number of team members' },
+            { id: 'q5', text: "What is your company's primary focus area? (e.g., residential sales, commercial, property management)", key: 'businessFocus', placeholder: 'Describe your main business focus' },
+            { id: 'q6', text: "What geographical areas does your business serve?", key: 'serviceArea', placeholder: 'List your service areas' },
+            { id: 'q7', text: "What CRM or lead management system does your company use?", key: 'companyCRM', placeholder: 'e.g., Salesforce, in-house system, none' },
+            { id: 'q8', text: "What other key software or tools does your business rely on?", key: 'businessTools', placeholder: 'List important software/tools' },
+            { id: 'q9', text: "How does your company primarily generate new leads?", key: 'leadGeneration', placeholder: 'Describe lead generation methods' },
+            { id: 'q10', text: "What is your approximate close rate (percentage of leads that become transactions)?", key: 'closeRate', placeholder: 'Enter approximate percentage' },
+            { id: 'q11', text: "What is your company's biggest operational challenge right now?", key: 'operationalChallenge', placeholder: 'Describe your main challenge' },
+            { id: 'q12', text: "How does your company handle transaction management and paperwork?", key: 'transactionManagement', placeholder: 'Describe process or tools used' },
+            { id: 'q13', text: "What is your current process for recruiting and retaining agents?", key: 'recruitmentProcess', placeholder: 'Describe your approach' },
+            { id: 'q14', text: "How do you track performance metrics for your agents or teams?", key: 'performanceTracking', placeholder: 'Describe tracking methods' },
+            { id: 'q15', text: "What is your company's annual revenue growth rate over the past year?", key: 'growthRate', placeholder: 'Enter approximate percentage' },
+            { id: 'q16', text: "What are your top business goals for the next 12 months?", key: 'businessGoals', placeholder: 'List your primary goals' },
+            { id: 'q17', text: "What is one process in your business that you believe is inefficient or could be improved?", key: 'inefficientProcess', placeholder: 'Identify an area for improvement' },
+            { id: 'q18', text: "How much time per week do you personally spend on administrative tasks vs. strategic activities?", key: 'timeAllocation', placeholder: 'e.g., 60% admin, 40% strategic' },
+            { id: 'q19', text: "If you could automate one aspect of your business operations, what would it be?", key: 'automationWish', placeholder: 'Describe what you would automate' },
+            { id: 'q20', text: "What do you see as the biggest opportunity for growth in your business right now?", key: 'growthOpportunity', placeholder: 'Identify key opportunity' }
         ];
 
-        // --- FUNÇÕES DE INTERFACE ---
-        function addMessage(sender, content, isHTML = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender);
-            let messageContent = '';
-            if (sender === 'bot') {
-                // Verifica se é a análise final (texto plano)
-                if (content.includes('Analysis generated by Ralph')) { // Identificador simples
-                     messageContent = `<div class="avatar">R</div><div class="message-content"><pre class="analysis-text">${escapeHTML(content)}</pre></div>`;
-                } else {
-                     messageContent = `<div class="avatar">R</div><div class="message-content">${isHTML ? content : escapeHTML(content)}</div>`;
+        // --- FUNÇÕES PRINCIPAIS ---
+
+        // Função para mostrar a seleção de perfil inicial
+        function showProfileSelection() {
+            const profileSelector = document.createElement('div');
+            profileSelector.className = 'initial-profile-selector';
+            profileSelector.innerHTML = `
+                <div class="message bot">
+                    <div class="avatar">R</div>
+                    <div class="message-content">
+                        <p>Hi there! I'm Ralph, your Real Estate Business Analyzer. To provide the most relevant analysis, please select your profile:</p>
+                    </div>
+                </div>
+                <button class="profile-btn" data-profile="individual">I'm an Independent Agent</button>
+                <button class="profile-btn" data-profile="employee">I Work for a Real Estate Company</button>
+                <button class="profile-btn" data-profile="owner">I Own a Real Estate Business</button>
+            `;
+            
+            chatMessages.appendChild(profileSelector);
+            
+            // Adiciona event listeners para os botões de perfil
+            const profileButtons = profileSelector.querySelectorAll('.profile-btn');
+            profileButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    USER_PROFILE = button.getAttribute('data-profile');
+                    console.log(`Perfil selecionado: ${USER_PROFILE}`);
+                    
+                    // Define as perguntas com base no perfil
+                    if (USER_PROFILE === 'individual') questions = questions_individual;
+                    else if (USER_PROFILE === 'employee') questions = questions_employee;
+                    else if (USER_PROFILE === 'owner') questions = questions_owner;
+                    
+                    // Remove os botões de seleção
+                    profileSelector.remove();
+                    
+                    // Inicia o questionário
+                    askNextQuestion();
+                });
+            });
+        }
+
+        // Função para fazer a próxima pergunta
+        function askNextQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const question = questions[currentQuestionIndex];
+                let questionText = question.text;
+                
+                // Substitui {userName} pelo nome do usuário se disponível
+                if (userAnswers.userName) {
+                    questionText = questionText.replace('{userName}', userAnswers.userName);
+                }
+                
+                addMessage('bot', questionText);
+                
+                // Atualiza a barra de progresso
+                updateProgress();
+                
+                // Habilita o input para resposta
+                userInput.disabled = false;
+                userInput.placeholder = question.placeholder;
+                sendBtn.disabled = false;
+                userInput.focus();
+                
+                // Se for a última pergunta, mostra o botão de finalizar
+                if (currentQuestionIndex === questions.length - 1) {
+                    finishBtn.style.display = 'block';
                 }
             } else {
-                messageContent = `<div class="message-content">${escapeHTML(content)}</div>`; // Sempre escapa input do usuário
+                // Todas as perguntas foram respondidas
+                finishBtn.style.display = 'block';
+                finishBtn.disabled = false;
+                userInput.disabled = true;
+                sendBtn.disabled = true;
+                
+                addMessage('bot', "Great! I have all the information I need. Click the button below to get your personalized business analysis.");
             }
-            messageDiv.innerHTML = messageContent;
+        }
+
+        // Função para processar a entrada do usuário
+        function handleUserInput() {
+            if (userInput.disabled || !userInput.value.trim()) return;
+            
+            const userMessage = userInput.value.trim();
+            addMessage('user', userMessage);
+            
+            // Armazena a resposta
+            const currentQuestion = questions[currentQuestionIndex];
+            userAnswers[currentQuestion.key] = userMessage;
+            
+            // Se for a primeira pergunta (nome), armazena o nome do usuário
+            if (currentQuestion.key === 'userName') {
+                userName = userMessage;
+            }
+            
+            // Limpa e desabilita o input
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Avança para a próxima pergunta
+            currentQuestionIndex++;
+            
+            // Simula o bot digitando
+            simulateTyping();
+        }
+
+        // Função para simular o bot digitando
+        function simulateTyping() {
+            if (isTyping) return;
+            
+            isTyping = true;
+            
+            // Cria o indicador de digitação
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="avatar">R</div>
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingIndicator);
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Define um tempo aleatório para "digitação"
+            const typingTime = Math.floor(Math.random() * 1000) + 1000; // 1-2 segundos
+            
+            setTimeout(() => {
+                typingIndicator.remove();
+                isTyping = false;
+                askNextQuestion();
+            }, typingTime);
+        }
+
+        // Função para adicionar mensagem ao chat
+        function addMessage(sender, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="avatar">R</div>
+                    <div class="message-content">${content}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content">${content}</div>
+                `;
+            }
+            
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            // Adiciona ao histórico APENAS se não for a mensagem de seleção de perfil do bot
-            if (!(sender === 'bot' && content.includes('To start, please tell me a bit about your role:'))) {
-                 chatHistory.push({ sender: sender, content: content });
-            }
+            
+            // Adiciona ao histórico do chat
+            chatHistory.push({
+                sender: sender,
+                content: content
+            });
         }
 
-        function escapeHTML(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function showTyping() {
-            if (isTyping) return;
-            isTyping = true;
-            const typingDiv = document.createElement('div');
-            typingDiv.classList.add('message', 'bot', 'typing-indicator');
-            typingDiv.id = 'typingIndicator';
-            typingDiv.innerHTML = `<div class="avatar">R</div><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
-            chatMessages.appendChild(typingDiv);
-            typingDiv.style.display = 'flex';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function hideTyping() {
-            isTyping = false;
-            const typingDiv = document.getElementById('typingIndicator');
-            if (typingDiv) typingDiv.remove();
-        }
-
+        // Função para atualizar a barra de progresso
         function updateProgress() {
-            const progress = questions.length > 0 ? (currentQuestionIndex / questions.length) * 100 : 0;
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
             progressFill.style.width = `${progress}%`;
         }
 
-        // --- FUNÇÕES DE INTERAÇÃO (MODIFICADAS) ---
-        function handleUserInput() {
-            const text = userInput.value.trim();
-            if (!text || isFinished || USER_PROFILE === null) return;
-
-            addMessage('user', text);
-            userInput.value = '';
-            userInput.style.height = 'auto'; // Reset height after sending
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-
-            const currentQuestion = questions[currentQuestionIndex];
-            if (currentQuestion.key) {
-                userAnswers[currentQuestion.key] = text; // Armazena resposta
-            }
-
-            currentQuestionIndex++;
-            updateProgress();
-
-            if (currentQuestionIndex < questions.length) {
-                askNextQuestion();
-            } else {
-                finishConversation();
-            }
+        // Função para escapar HTML (segurança)
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag]));
         }
 
-        function askNextQuestion() {
-             if (isFinished || USER_PROFILE === null || currentQuestionIndex >= questions.length) return;
-
-            const currentQuestion = questions[currentQuestionIndex];
-            let questionText = currentQuestion.text;
-
-            // Substitui placeholders como {userName}
-            if (userAnswers.userName && questionText.includes('{userName}')) {
-                questionText = questionText.replace('{userName}', userAnswers.userName);
-            }
-            // Adicionar mais substituições se necessário para outras chaves
-
-            showTyping();
-            setTimeout(() => {
-                hideTyping();
-                addMessage('bot', questionText);
-                userInput.disabled = false;
-                sendBtn.disabled = false;
-                userInput.placeholder = currentQuestion.placeholder || 'Type your answer...';
-                userInput.focus();
-            }, 1000 + Math.random() * 500); // Pequeno delay aleatório
-        }
-
-        // Função para mostrar os botões iniciais de perfil
-        function showProfileSelection() {
-            const profileOptions = [
-                { label: 'I work independently', value: 'individual' },
-                { label: 'I work for a real estate company/brokerage', value: 'employee' },
-                { label: 'I own a real estate business', value: 'owner' }
-            ];
-
-            addMessage('bot', "To start, please tell me a bit about your role:");
-
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.classList.add('initial-profile-selector');
-            buttonsDiv.id = 'profileButtons';
-
-            profileOptions.forEach(option => {
-                const button = document.createElement('button');
-                button.classList.add('profile-btn');
-                button.textContent = option.label;
-                button.onclick = () => handleProfileSelection(option.value);
-                buttonsDiv.appendChild(button);
-            });
-
-            chatMessages.appendChild(buttonsDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-        }
-
-        // Função para processar a seleção de perfil
-        function handleProfileSelection(profile) {
-            USER_PROFILE = profile;
-            const profileButtons = document.getElementById('profileButtons');
-            if (profileButtons) profileButtons.remove();
-
-            // Adiciona a seleção como mensagem do usuário (para histórico)
-            const selectedLabel = profile === 'individual' ? 'Selected: I work independently' :
-                                profile === 'employee' ? 'Selected: I work for a real estate company/brokerage' :
-                                'Selected: I own a real estate business';
-            addMessage('user', selectedLabel);
-
-            // Define o conjunto de perguntas correto
-            if (profile === 'individual') questions = questions_individual;
-            else if (profile === 'employee') questions = questions_employee;
-            else if (profile === 'owner') questions = questions_owner;
-            else {
-                addMessage('bot', 'Sorry, something went wrong with profile selection.');
-                return;
-            }
-
-            // Inicia o questionário
-            currentQuestionIndex = 0;
-            updateProgress();
-            askNextQuestion();
-        }
-
-        function finishConversation() {
-            isFinished = true;
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-
-            showTyping();
-            setTimeout(() => {
-                hideTyping();
-                addMessage('bot', "Thanks for sharing all that information! You've answered all the questions. Click the button below to get your personalized AI analysis.");
-                finishBtn.style.display = 'block';
-                finishBtn.disabled = false;
-            }, 1000);
-        }
-
+        // Função para obter a análise
         async function getAnalysis() {
-            if (!isFinished) return;
-
+            if (isFinished) return;
+            
             finishBtn.disabled = true;
-            finishBtn.textContent = '🧠 Analyzing... Please wait...';
-            statusMessage.textContent = 'Sending data for analysis...';
+            finishBtn.textContent = 'Analyzing...';
+            statusMessage.textContent = 'Preparing analysis...';
             statusMessage.style.display = 'block';
-
-            // Prepara dados para enviar (inclui perfil e histórico)
-            const dataToSend = {
-                userName: userAnswers.userName || 'User',
-                profile: USER_PROFILE,
-                chatHistory: chatHistory // Envia histórico completo para TXT e email
-                // userAnswers são parte do chatHistory agora
-            };
-
+            
             try {
-                statusMessage.textContent = 'Connecting to AI...';
+                // Prepara os dados para enviar
+                const dataToSend = {
+                    userName: userAnswers.userName || "User",
+                    profile: USER_PROFILE,
+                    chatHistory: chatHistory
+                };
+                
+                console.log("Enviando dados para análise:", dataToSend);
+                
+                // Envia para o backend
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -528,7 +612,15 @@
                 // Adiciona a análise (texto plano) como mensagem do bot
                 addMessage('bot', result.analysis_text || "Analysis received, but content is empty.");
                 finishBtn.textContent = 'Analysis Complete!';
-                // finishBtn.style.display = 'none'; // Opcional: esconder botão
+                finishBtn.style.display = 'none'; // Esconde o botão após análise
+                
+                // Verifica se precisa solicitar o email
+                if (result.need_email === true) {
+                    // Mostra o formulário de email
+                    emailForm.style.display = 'block';
+                    // Rola para o formulário
+                    emailForm.scrollIntoView({ behavior: 'smooth' });
+                }
 
             } catch (error) {
                 console.error('Error fetching analysis:', error);
@@ -536,6 +628,72 @@
                 addMessage('bot', `<div class="analysis-text"><strong>Analysis Error</strong><br>Sorry, an error occurred: ${escapeHTML(error.message || 'Unknown error')}<br>Please check the console or try again later.</div>`);
                 finishBtn.textContent = 'Analysis Failed - Try Again?'; // Permite tentar novamente
                 finishBtn.disabled = false; // Reabilita o botão em caso de erro
+            }
+        }
+        
+        // Função para enviar o email e solicitar o PDF
+        async function submitEmail() {
+            const email = userEmail.value.trim();
+            
+            // Validação básica de email
+            if (!email || !email.includes('@') || !email.includes('.')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            // Desabilita o botão e mostra status
+            submitEmailBtn.disabled = true;
+            submitEmailBtn.textContent = 'Sending...';
+            statusMessage.textContent = 'Sending your report...';
+            statusMessage.style.display = 'block';
+            
+            try {
+                // Prepara os dados para enviar
+                const dataToSend = {
+                    email: email,
+                    userName: userAnswers.userName || "User",
+                    profile: USER_PROFILE,
+                    chatHistory: chatHistory
+                };
+                
+                console.log("Enviando solicitação de PDF:", dataToSend);
+                
+                // Envia para o backend
+                const response = await fetch(SUBMIT_EMAIL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend),
+                });
+                
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! status: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorData.error || JSON.stringify(errorData);
+                    } catch (jsonError) {
+                        try { errorMsg = await response.text(); } catch (textError) { /* ignore */ }
+                    }
+                    throw new Error(errorMsg);
+                }
+                
+                const result = await response.json();
+                
+                // Esconde o formulário
+                emailForm.style.display = 'none';
+                
+                // Mostra mensagem de sucesso
+                statusMessage.textContent = 'Report sent successfully!';
+                setTimeout(() => { statusMessage.style.display = 'none'; }, 3000);
+                
+                // Adiciona mensagem de confirmação
+                addMessage('bot', `Great! Your detailed PDF report has been sent to ${email}. Please check your inbox (and spam folder if necessary).`);
+                
+            } catch (error) {
+                console.error('Error submitting email:', error);
+                statusMessage.textContent = 'Error sending report.';
+                submitEmailBtn.disabled = false;
+                submitEmailBtn.textContent = 'Try Again';
+                addMessage('bot', `Sorry, there was an issue sending your report. Please try again or contact support. Error: ${escapeHTML(error.message || 'Unknown error')}`);
             }
         }
 
@@ -571,8 +729,8 @@
         });
         sendBtn.addEventListener('click', handleUserInput);
         finishBtn.addEventListener('click', getAnalysis);
+        submitEmailBtn.addEventListener('click', submitEmail);
 
     </script>
 </body>
 </html>
-
