@@ -708,10 +708,9 @@
             
             // Prepara os dados para enviar ao backend
             const requestData = {
-                userName: userName || "User",
+                user_name: userName || "User", // <-- Chave corrigida
                 profile: USER_PROFILE,
-                chatHistory: chatHistory,
-                answers: userAnswers
+                chatHistory: chatHistory
             };
             
             console.log("Enviando dados para análise:", requestData);
@@ -792,7 +791,7 @@
             // Prepara os dados para enviar ao backend
             const requestData = {
                 email: email,
-                userName: userName || "User",
+                user_name: userName || "User", // <-- Chave corrigida
                 profile: USER_PROFILE,
                 chatHistory: chatHistory
             };
