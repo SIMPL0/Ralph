@@ -463,7 +463,7 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
 
 
-@app.route("/generate-pdf", methods=["POST"])
+@app.@app.route("/generate-pdf", methods=["POST"])
 def generate_pdf():
     """Endpoint para gerar o relatório PDF detalhado e retorná-lo para download."""
     print("=== DEBUG: Recebendo requisição para gerar PDF ===")
@@ -505,5 +505,4 @@ def generate_pdf():
         print(f"ERROR CRÍTICO no endpoint /generate-pdf: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": f"An unexpected error occurred: {str(e)[:200]}"}), 500
-
+        return jsonify({"error": f"An unexpected error occurred: {str(e)[:200]}"}), 5000
