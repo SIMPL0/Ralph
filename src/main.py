@@ -187,7 +187,7 @@ Analysis:"""
             ],
             max_tokens=3000 if for_pdf else 1000,  # Mais tokens para o PDF
             temperature=0.7,
-            timeout=45 if for_pdf else 30,  # Timeout maior para o PDF
+            timeout=70 if for_pdf else 220,  # Timeout maior para o PDF
         )
 
         print("--- Resposta da DeepSeek API recebida ---")
