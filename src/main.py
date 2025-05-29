@@ -11,9 +11,9 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from fpdf import FPDF
 
-# --- Determinar Caminhos Absolutos ---
+# --- Determine Absolute Paths ---
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(APP_DIR))
+PROJECT_ROOT = os.path.dirname(APP_DIR)
 STATIC_FOLDER_PATH = os.path.join(PROJECT_ROOT, 'static')
 PDF_FOLDER = os.path.join(tempfile.gettempdir(), 'ralph_reports')
 os.makedirs(PDF_FOLDER, exist_ok=True)
@@ -25,6 +25,7 @@ print(f"DEBUG: PDF Folder Path: {PDF_FOLDER}")
 app = Flask(__name__, static_folder=STATIC_FOLDER_PATH)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# --- Environment Variables Configuration ---
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER", "simploai.ofc@gmail.com")
@@ -32,6 +33,7 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER", "simploai.ofc@gmail.com")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
+# --- DeepSeek Client Configuration ---
 client = None
 if DEEPSEEK_API_KEY:
     try:
@@ -39,15 +41,15 @@ if DEEPSEEK_API_KEY:
             api_key=DEEPSEEK_API_KEY,
             base_url="https://api.deepseek.com"
         )
-        print("Cliente DeepSeek (via OpenAI SDK) configurado com sucesso.")
+        print("DeepSeek client configured successfully.")
     except Exception as e:
-        print(f"Erro ao configurar cliente DeepSeek (via OpenAI SDK): {e}")
+        print(f"Error configuring DeepSeek client: {e}")
         client = None
 else:
-    print("Aviso: Variável DEEPSEEK_API_KEY não definida ou inválida. Análise da IA será pulada.")
+    print("Warning: DEEPSEEK_API_KEY not defined. AI analysis will be skipped.")
 
 def format_conversation_to_text(chat_history, user_name="User", profile="unknown", max_messages=15):
-    "Formata o histórico do chat em uma string de texto simples, limitando o número de mensagens."
+    "Format chat history into a plain text string, limiting message count."
     text_log = f"Real Estate Business Analysis for {user_name}\n"
     text_log += f"Profile: {profile.title()}\n"
     text_log += "="*50 + "\n\n"
@@ -77,25 +79,23 @@ def format_conversation_to_text(chat_history, user_name="User", profile="unknown
     return text_log
 
 def save_conversation_to_file(conversation_text):
-    "Salva a string da conversa em um arquivo TXT temporário."
+    "Save conversation string to a temporary TXT file."
     try:
-        import tempfile
         temp_dir = tempfile.gettempdir()
-        
         filename = f"ralph_conversation_{uuid.uuid4().hex[:8]}.txt"
         filepath = os.path.join(temp_dir, filename)
         
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(conversation_text)
         
-        print(f"Conversa salva em: {filepath}")
+        print(f"Conversation saved to: {filepath}")
         return filepath
     except Exception as e:
-        print(f"Erro ao salvar arquivo de conversa: {e}")
+        print(f"Error saving conversation file: {e}")
         return None
 
 def generate_deepseek_analysis(chat_history, profile, user_name="User", for_pdf=False):
-    "Gera análise usando DeepSeek com base no histórico de chat formatado como texto."
+    "Generate analysis using DeepSeek based on formatted chat history."
     if not client:
         return "AI analysis could not be performed. DeepSeek API configuration missing or failed."
 
@@ -133,7 +133,7 @@ Analysis Report:"""
         prompt = f"""Based on the conversation with a {context} named {user_name}, provide a brief business analysis summary covering:\n1. Key business strengths identified\n2. Main areas for improvement\n3. 2-3 actionable recommendations\n\nKeep professional yet conversational. Max 250 words. **This is just a summary.** You can generate the full, detailed PDF report with step-by-step guidance in the next step.\n\nConversation Data:\n{conversation_text}\n\nAnalysis:"""
 
     try:
-        print(f"\n--- Enviando requisição para DeepSeek API com prompt {'para PDF' if for_pdf else 'padrão'} ---")
+        print(f"\n--- Sending request to DeepSeek API with {'PDF' if for_pdf else 'standard'} prompt ---")
 
         response = client.chat.completions.create(
             model="deepseek-chat",
@@ -152,7 +152,7 @@ Analysis Report:"""
             timeout=70 if for_pdf else 220,
         )
 
-        print("--- Resposta da DeepSeek API recebida ---")
+        print("--- DeepSeek API response received ---")
 
         ai_analysis_text = response.choices[0].message.content.strip()
 
@@ -165,7 +165,7 @@ Analysis Report:"""
         return ai_analysis_text
 
     except Exception as e:
-        print(f"Erro ao chamar API DeepSeek: {e}")
+        print(f"Error calling DeepSeek API: {e}")
         if "authentication" in str(e).lower():
              error_msg = f"Error generating AI analysis: Authentication failed. Please check your DeepSeek API key configuration. ({str(e)})"
         elif "quota" in str(e).lower() or "limit" in str(e).lower() or "insufficient_quota" in str(e).lower():
@@ -177,7 +177,7 @@ Analysis Report:"""
         return error_msg
 
 class RalphPDF(FPDF):
-    "Classe personalizada para criar PDFs profissionais."
+    "Custom class for creating professional PDFs."
     def __init__(self):
         super().__init__()
         self.set_auto_page_break(auto=True, margin=15)
@@ -241,13 +241,13 @@ class RalphPDF(FPDF):
         self.set_y(y + 35)
 
 def generate_pdf_report_with_ai_content(chat_history, profile, user_name="User"):
-    "Gera um relatório PDF profissional com conteúdo gerado pela IA."
+    "Generate professional PDF report with AI-generated content."
     try:
-        print("DEBUG: Gerando conteúdo do PDF via API...")
+        print("DEBUG: Generating PDF content via API...")
         ai_content = generate_deepseek_analysis(chat_history, profile, user_name, for_pdf=True)
         
         if "Error generating AI analysis:" in ai_content:
-            print(f"WARN: Erro ao gerar conteúdo do PDF via API: {ai_content}")
+            print(f"WARN: Error generating PDF content via API: {ai_content}")
             return None, None
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -311,43 +311,43 @@ def generate_pdf_report_with_ai_content(chat_history, profile, user_name="User")
         
         pdf.output(pdf_path)
         
-        print(f"DEBUG: PDF gerado com sucesso: {pdf_path}")
+        print(f"DEBUG: PDF generated successfully: {pdf_path}")
         return pdf_path, pdf_filename
         
     except Exception as e:
-        print(f"Erro ao gerar PDF: {e}")
+        print(f"Error generating PDF: {e}")
         import traceback
         traceback.print_exc()
         return None, None
 
 @app.route("/analyze", methods=["POST"])
 def analyze_chat():
-    "Endpoint para analisar o histórico de chat e gerar uma resposta."
-    print("=== DEBUG: Recebendo requisição de análise ===")
+    "Endpoint to analyze chat history and generate a response."
+    print("=== DEBUG: Received analysis request ===")
     
     try:
         if not request.is_json:
-            print("ERROR: Request não é JSON")
+            print("ERROR: Request is not JSON")
             return jsonify({"error": "Request must be JSON"}), 400
             
         data = request.get_json()
         if not data:
-            print("ERROR: Nenhum dado JSON recebido")
+            print("ERROR: No JSON data received")
             return jsonify({"error": "No data received"}), 400
             
         chat_history = data.get("chatHistory", [])
         user_name = data.get("userName", "User")
         profile = data.get("profile", "unknown")
         
-        print(f"DEBUG: Recebido user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
+        print(f"DEBUG: Received user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
         
         if not chat_history:
-            print("ERROR: Histórico de chat vazio")
+            print("ERROR: Empty chat history")
             return jsonify({"error": "Chat history is empty"}), 400
             
         conversation_text = format_conversation_to_text(chat_history, user_name, profile)
         
-        print("DEBUG: Gerando análise de resumo via API...")
+        print("DEBUG: Generating summary analysis via API...")
         chat_analysis = generate_deepseek_analysis(chat_history, profile, user_name, for_pdf=False)
 
         response_data = {
@@ -356,11 +356,11 @@ def analyze_chat():
             "pdf_ready": True
         }
         
-        print(f"DEBUG: Retornando análise/status: {response_data['status']}, pdf_ready: {response_data['pdf_ready']}")
+        print(f"DEBUG: Returning analysis/status: {response_data['status']}, pdf_ready: {response_data['pdf_ready']}")
         return jsonify(response_data), 200
 
     except Exception as e:
-        print(f"ERROR CRÍTICO no endpoint /analyze: {e}")
+        print(f"CRITICAL ERROR in /analyze endpoint: {e}")
         import traceback
         traceback.print_exc()
         
@@ -374,53 +374,53 @@ def analyze_chat():
 
 @app.route("/health")
 def health_check():
-    "Endpoint para verificar se o serviço está funcionando."
+    "Endpoint to check if the service is running."
     return jsonify({
         "status": "healthy",
         "openai_configured": client is not None
     })
 
-if __name__ == "__main__":
-    print("Iniciando Flask app...")
-    print(f"DeepSeek configurado: {client is not None}")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
-
 @app.route("/generate-pdf", methods=["POST"])
 def generate_pdf():
-    "Endpoint para gerar o relatório PDF detalhado e retorná-lo para download."
-    print("=== DEBUG: Recebendo requisição para gerar PDF ===")
+    "Endpoint to generate detailed PDF report and return it for download."
+    print("=== DEBUG: Received PDF generation request ===")
     
     try:
         if not request.is_json:
-            print("ERROR: Request não é JSON")
+            print("ERROR: Request is not JSON")
             return jsonify({"error": "Request must be JSON"}), 400
             
         data = request.get_json()
         if not data:
-            print("ERROR: Nenhum dado JSON recebido")
+            print("ERROR: No JSON data received")
             return jsonify({"error": "No data received"}), 400
             
         chat_history = data.get("chatHistory", [])
         user_name = data.get("userName", "User")
         profile = data.get("profile", "unknown")
         
-        print(f"DEBUG: Gerando PDF para user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
+        print(f"DEBUG: Generating PDF for user_name={user_name}, profile={profile}, chat_history length={len(chat_history)}")
         
         if not chat_history:
-            print("ERROR: Histórico de chat vazio para gerar PDF")
+            print("ERROR: Empty chat history for PDF generation")
             return jsonify({"error": "Chat history is empty"}), 400
             
         pdf_path, pdf_filename = generate_pdf_report_with_ai_content(chat_history, profile, user_name)
         
         if pdf_path and pdf_filename:
-            print(f"DEBUG: PDF gerado: {pdf_path}. Enviando arquivo...")
+            print(f"DEBUG: PDF generated: {pdf_path}. Sending file...")
             return send_file(pdf_path, as_attachment=True, download_name=pdf_filename)
         else:
-            print("ERROR: Falha ao gerar o PDF para download")
+            print("ERROR: Failed to generate PDF for download")
             return jsonify({"error": "Failed to generate PDF report"}), 500
             
     except Exception as e:
-        print(f"ERROR CRÍTICO no endpoint /generate-pdf: {e}")
+        print(f"CRITICAL ERROR in /generate-pdf endpoint: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An unexpected error occurred: {str(e)[:200]}"}), 500
+
+if __name__ == "__main__":
+    print("Starting Flask app...")
+    print(f"DeepSeek configured: {client is not None}")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True)
