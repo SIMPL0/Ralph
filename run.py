@@ -8,10 +8,14 @@ from app import create_app
 
 app = create_app()
 
-if __name__ == \"__main__\":
+# CORREÇÃO: Removidas as barras invertidas extras antes das aspas
+if __name__ == "__main__":
     # Obtém a porta da variável de ambiente ou usa 5000 como padrão
-    port = int(os.environ.get(\"PORT\", 5000))
+    port = int(os.environ.get("PORT", 5000))
     # Executa o app em modo de debug (ideal para desenvolvimento)
     # Para produção, use um servidor WSGI como Gunicorn
-    app.run(host=\"0.0.0.0\", port=port, debug=True)
+    # O Render usará o comando Gunicorn definido no Start Command, 
+    # esta linha app.run() é mais para teste local.
+    # Considere remover debug=True para produção.
+    app.run(host="0.0.0.0", port=port, debug=True) 
 
