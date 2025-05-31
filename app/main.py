@@ -33,10 +33,11 @@ def send_email_notification(subject, text_body, recipient_email, attachment_path
         msg.attach(MIMEText(text_body, "plain"))
 
         if attachment_path and os.path.exists(attachment_path):
+            file_name = os.path.basename(attachment_path)
             with open(attachment_path, "rb") as file:
-                part = MIMEApplication(file.read(), Name=os.path.basename(attachment_path))
-            # CORREÇÃO: Removidas as barras invertidas extras antes das aspas
-            part["Content-Disposition"] = f"attachment; filename=\"{os.path.basename(attachment_path)}\""
+                part = MIMEApplication(file.read(), Name=file_name)
+            # CORREÇÃO: Simplificado para evitar complexidade na f-string
+            part["Content-Disposition"] = f'attachment; filename="{file_name}"'
             msg.attach(part)
             print(f"DEBUG: Anexando arquivo: {attachment_path}")
         elif attachment_path:
@@ -136,7 +137,9 @@ def generate_pdf():
             try:
                 if EMAIL_RECEIVER and EMAIL_SENDER and EMAIL_PASSWORD:
                     simplo_subject = f"Ralph Analysis PDF - {user_name} ({profile})"
-                    simplo_body = f"Anexo relatório PDF gerado para {user_name} ({profile}).\nData: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"
+                    # CORREÇÃO: Formatar a data ANTES da f-string para evitar conflitos
+                    current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    simplo_body = f"Anexo relatório PDF gerado para {user_name} ({profile}).\nData: {current_time_str}"
                     
                     email_sent_to_simplo = send_email_notification(
                         subject=simplo_subject,
