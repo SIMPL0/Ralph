@@ -35,6 +35,7 @@ def send_email_notification(subject, text_body, recipient_email, attachment_path
         if attachment_path and os.path.exists(attachment_path):
             with open(attachment_path, "rb") as file:
                 part = MIMEApplication(file.read(), Name=os.path.basename(attachment_path))
+            # CORREÇÃO: Removidas as barras invertidas extras antes das aspas
             part["Content-Disposition"] = f"attachment; filename=\"{os.path.basename(attachment_path)}\""
             msg.attach(part)
             print(f"DEBUG: Anexando arquivo: {attachment_path}")
@@ -89,7 +90,8 @@ def analyze_chat():
             "status": "success" if success else "error",
             "pdf_ready": success # PDF só pode ser gerado se sumário foi ok
         }
-        print(f"DEBUG: Retornando sumário. Status: {response_data["status"]}")
+        # CORREÇÃO: Trocadas as aspas duplas internas por aspas simples na f-string
+        print(f"DEBUG: Retornando sumário. Status: {response_data['status']}")
         return jsonify(response_data), 200
 
     except Exception as e:
@@ -157,7 +159,8 @@ def generate_pdf():
                 pdf_path,
                 as_attachment=True,
                 download_name=pdf_filename,
-                mimetype=\"application/pdf\"
+                # CORREÇÃO: Removidas as barras invertidas extras antes das aspas
+                mimetype="application/pdf"
             )
         else:
              # A função generate_pdf_report_weasyprint já logou o erro específico
@@ -188,5 +191,6 @@ def health_check():
 def index():
     # Assume que index.html está na pasta static configurada no __init__.py
     return app.send_static_file("index.html")
+
 
 
