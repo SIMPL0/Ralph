@@ -7,16 +7,18 @@ from flask_cors import CORS
 # from .. import config
 
 def create_app():
+    # CORREÇÃO: Removidas as barras invertidas extras antes das aspas simples
     app = Flask(__name__, 
-                static_folder=\'static\', 
-                template_folder=\'templates\')
+                static_folder='static', 
+                template_folder='templates')
     
     # Configuração de CORS
     CORS(app, resources={r"/*": {"origins": "*"}})
 
     # Configurações da aplicação (ex: chave secreta, se necessário)
     # app.config.from_object(config.Config)
-    app.config[\'SECRET_KEY\'] = os.getenv(\'FLASK_SECRET_KEY\', \'uma-chave-secreta-muito-segura\')
+    # CORREÇÃO: Removidas as barras invertidas extras antes das aspas simples
+    app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'uma-chave-secreta-muito-segura')
 
     # Registrar Blueprints ou rotas diretamente
     with app.app_context():
@@ -27,4 +29,5 @@ def create_app():
 
     print("Flask app created.")
     return app
+
 
