@@ -2,4 +2,4 @@ Flask
 Flask-Cors
 gunicorn
 openai
-fpdf2
+WeasyPrint

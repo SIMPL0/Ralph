@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Analysis Report - Ralph AI</title>
+    <style>
+        /* Professional CSS Styles for WeasyPrint PDF Generation */
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm; /* Standard margins */
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666666;
+            }
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif; /* Common professional fonts */
+            line-height: 1.5;
+            color: #333333;
+            font-size: 10pt;
+        }
+        .report-container {
+            width: 100%;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #004080; /* Dark blue accent */
+            padding-bottom: 15px;
+        }
+        .header h1 {
+            font-family: 'Arial Black', Gadget, sans-serif; /* Bolder font for logo */
+            color: #002040; /* Darker blue */
+            font-size: 28pt;
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+        }
+        .header .subtitle {
+            color: #004080;
+            font-size: 12pt;
+            margin: 5px 0;
+        }
+         .header .client-info {
+            color: #555555;
+            font-size: 9pt;
+            margin-top: 10px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #dddddd; /* Light separator line */
+            /* Remove background and border-left for a cleaner look */
+            /* background-color: #f9f9f9; */
+            /* border-left: 4px solid #007bff; */
+            page-break-inside: avoid; /* Try to keep sections on one page */
+        }
+        .section h2 {
+            font-family: 'Arial Narrow', Arial, sans-serif;
+            font-size: 14pt;
+            color: #004080; /* Dark blue for section titles */
+            margin-top: 10px; /* Space above title */
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+            border-bottom: 1px solid #cccccc; /* Underline title */
+            padding-bottom: 5px;
+        }
+        .section-content {
+            font-size: 10pt;
+            color: #444444;
+            text-align: justify;
+        }
+        .section-content br {
+            /* Adjust spacing for bullet points if needed */
+            /* content: " "; */
+            /* display: block; */
+            /* margin-bottom: 0.5em; */
+        }
+
+        /* Footer styling is handled by @page rule */
+
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <div class="header">
+            <h1>RALPH</h1>
+            <p class="subtitle">Real Estate Business Analysis</p>
+            <p class="client-info">Client: {{ user_name }} ({{ profile_title }}) | Generated on: {{ generation_date }}</p>
+        </div>
+
+        <!-- Sections with English Titles -->
+
+        <div class="section" id="executive-summary">
+            <h2>Executive Summary</h2>
+            <div class="section-content">
+                {{ sections.executive_summary }}
+            </div>
+        </div>
+
+        <div class="section" id="best-tactics">
+            <h2>Best Tactics</h2>
+            <div class="section-content">
+                {{ sections.best_tactics }}
+            </div>
+        </div>
+
+        <div class="section" id="areas-to-change">
+            <h2>Areas to Change</h2>
+            <div class="section-content">
+                {{ sections.areas_to_change }}
+            </div>
+        </div>
+
+        <div class="section" id="automations">
+            <h2>Suggested Automations</h2>
+            <div class="section-content">
+                {{ sections.automations }}
+            </div>
+        </div>
+
+        <div class="section" id="next-10-months-plan">
+            <h2>Next 10 Months Plan</h2>
+            <div class="section-content">
+                {{ sections.next_10_months_plan }}
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
+
